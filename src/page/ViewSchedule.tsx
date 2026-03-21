@@ -1,12 +1,10 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
-  Button,
   Modal,
   Table,
   Loader,
   Center,
   Text,
-  ScrollArea,
   Badge,
   Stack,
   Group,
@@ -15,13 +13,35 @@ import {
   NumberInput,
   Select,
   Divider,
+  Button,
+  Card,
+  Box,
 } from "@mantine/core";
 import { DateInput } from "@mantine/dates";
-import { useDisclosure } from "@mantine/hooks";
-import { IconCalendar } from "@tabler/icons-react";
+import { IconCalendar, IconBook, IconMapPin, IconUser } from "@tabler/icons-react";
 import { getEvents } from "../api/event";
 import API from "../api/axios";
 import { notifications } from "@mantine/notifications";
+
+function normalizeDayOfWeek(day: string) {
+  const normalized = day
+    .toString()
+    .trim()
+    .toLowerCase()
+    .replace(/\s+/g, "");
+
+  if (normalized === "cn" || normalized === "chủnhật" || normalized === "chu nhật") {
+    return 7;
+  }
+
+  // Hỗ trợ các định dạng: "t3", "T3", "thứ3", "thu3"
+  const dayNum = Number(normalized.replace(/[^0-9]/g, ""));
+  if (Number.isInteger(dayNum) && dayNum >= 2 && dayNum <= 7) {
+    return dayNum;
+  }
+
+  return 0;
+}
 
 function filterEventsThisWeek(events: any[]) {
   const today = new Date();
@@ -29,19 +49,40 @@ function filterEventsThisWeek(events: any[]) {
   const nextWeek = new Date(today);
   nextWeek.setDate(today.getDate() + 7);
 
-  return events.filter((event) => {
+  const currentDay = today.getDay() === 0 ? 7 : today.getDay();
+
+  const filtered = events.filter((event) => {
     const startDate = new Date(event.start_date);
     const endDate = new Date(event.end_date);
     startDate.setHours(0, 0, 0, 0);
     endDate.setHours(0, 0, 0, 0);
     return startDate <= nextWeek && endDate >= today;
   });
+
+  return filtered.sort((a, b) => {
+    const da = normalizeDayOfWeek(a.day_of_week);
+    const db = normalizeDayOfWeek(b.day_of_week);
+
+    const offsetA = (da - currentDay + 7) % 7;
+    const offsetB = (db - currentDay + 7) % 7;
+
+    if (offsetA !== offsetB) {
+      return offsetA - offsetB;
+    }
+
+    const sa = new Date(a.start_date).getTime();
+    const sb = new Date(b.start_date).getTime();
+    if (sa !== sb) {
+      return sa - sb;
+    }
+
+    return (a.period_start || 0) - (b.period_start || 0);
+  });
 }
 
 type PanelMode = "skip" | "extra" | "edit" | null;
 
 export default function ViewSchedule() {
-  const [listOpened, { open: openList, close: closeList }] = useDisclosure(false);
   const [events, setEvents] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -60,23 +101,24 @@ export default function ViewSchedule() {
 
   const [editData, setEditData] = useState<any>({});
 
-  const fetchEvents = async () => {
-    openList();
-    setLoading(true);
-    setError(null);
-    try {
-      const response = await getEvents();
-      const allEvents = Array.isArray(response.data.data) ? response.data.data : [];
-      setEvents(filterEventsThisWeek(allEvents));
+  useEffect(() => {
+    const fetchEvents = async () => {
+      setLoading(true);
+      setError(null);
+      try {
+        const response = await getEvents();
+        const allEvents = Array.isArray(response.data.data) ? response.data.data : [];
+        setEvents(filterEventsThisWeek(allEvents));
 
-      console.log(filterEventsThisWeek(allEvents));
-
-    } catch {
-      setError("Không thể tải lịch học. Vui lòng thử lại.");
-    } finally {
-      setLoading(false);
-    }
-  };
+        console.log("filterEventsThisWeek(allEvents)", filterEventsThisWeek(allEvents));
+      } catch {
+        setError("Không thể tải lịch học. Vui lòng thử lại.");
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchEvents();
+  }, []);
 
   const openPanel = (event: any, mode: PanelMode) => {
     setSelectedEvent(event);
@@ -110,9 +152,7 @@ export default function ViewSchedule() {
     }
     setSubmitting(true);
     try {
-      await API.post(`/events/${selectedEvent.id}/skip`, {
-        skip_date: skipDate,
-      });
+      await API.post(`/events/${selectedEvent.id}/skip`, { skip_date: skipDate });
       if (hasMakeup && makeupDate) {
         await API.post(`/events/${selectedEvent.id}/extra`, {
           extra_date: makeupDate,
@@ -169,91 +209,95 @@ export default function ViewSchedule() {
     edit: "Sửa thông tin lịch học",
   };
 
+  const dayLabel = (d: string) => (d === "CN" ? "Chủ nhật" : `Thứ ${d}`);
+
+  if (loading) {
+    return <Center py="xl"><Loader size="sm" /></Center>;
+  }
+
+  if (error) {
+    return <Text c="red" size="sm">{error}</Text>;
+  }
+
   return (
     <>
-      <Button
-        variant="light"
-        fullWidth
-        leftSection={<IconCalendar size={16} />}
-        onClick={fetchEvents}
-      >
-        Lịch học tuần này
-      </Button>
+      {events.length === 0 ? (
+        <Text size="sm" c="dimmed" ta="center" py="md">
+          Không có lịch học nào trong 7 ngày tới.
+        </Text>
+      ) : (
+        <Stack gap="xs">
+          {events.map((item, index) => (
+            <Card
+              key={item.id || index}
+              withBorder
+              radius="md"
+              padding="sm"
+              shadow="xs"
+            >
+              <Stack gap={6}>
+                {/* Tên môn */}
+                <Group gap={6}>
+                  <IconBook size={14} color="var(--mantine-color-blue-6)" />
+                  <Text fw={600} size="sm">{item.title}</Text>
+                </Group>
 
-      <Modal
-        opened={listOpened}
-        onClose={closeList}
-        title="Lịch học 7 ngày tới"
-        size="xl"
-        centered
-      >
-        {loading ? (
-          <Center py="xl">
-            <Loader size="md" />
-          </Center>
-        ) : error ? (
-          <Text c="red" ta="center">{error}</Text>
-        ) : events.length === 0 ? (
-          <Text ta="center" py="xl" c="dimmed">
-            Không có lịch học nào trong 7 ngày tới.
-          </Text>
-        ) : (
-          <ScrollArea h={450}>
-            <Table striped highlightOnHover withTableBorder>
-              <Table.Thead>
-                <Table.Tr>
-                  <Table.Th>Tên môn</Table.Th>
-                  <Table.Th>Phòng</Table.Th>
-                  <Table.Th>Thứ</Table.Th>
-                  <Table.Th>Tiết</Table.Th>
-                  <Table.Th>Thao tác</Table.Th>
-                </Table.Tr>
-              </Table.Thead>
-              <Table.Tbody>
-                {events.map((item, index) => (
-                  <Table.Tr key={item.id || index}>
-                    <Table.Td fw={500}>{item.title}</Table.Td>
-                    <Table.Td>
-                      <Badge color="blue" variant="light">{item.room}</Badge>
-                    </Table.Td>
-                    <Table.Td>Thứ {item.day_of_week}</Table.Td>
-                    <Table.Td>{item.period_start} - {item.period_end}</Table.Td>
-                    <Table.Td>
-                      <Group gap={6}>
-                        <Button
-                          size="xs"
-                          color="red"
-                          variant="light"
-                          onClick={() => openPanel(item, "skip")}
-                        >
-                          Nghỉ
-                        </Button>
-                        <Button
-                          size="xs"
-                          color="teal"
-                          variant="light"
-                          onClick={() => openPanel(item, "extra")}
-                        >
-                          Bù
-                        </Button>
-                        <Button
-                          size="xs"
-                          color="gray"
-                          variant="light"
-                          onClick={() => openPanel(item, "edit")}
-                        >
-                          Sửa
-                        </Button>
-                      </Group>
-                    </Table.Td>
-                  </Table.Tr>
-                ))}
-              </Table.Tbody>
-            </Table>
-          </ScrollArea>
-        )}
-      </Modal>
+                {/* Thông tin chi tiết */}
+                <Group gap="md">
+                  <Group gap={4}>
+                    <IconMapPin size={13} color="var(--mantine-color-gray-5)" />
+                    <Text size="xs" c="dimmed">{item.room}</Text>
+                  </Group>
+                  <Group gap={4}>
+                    <IconCalendar size={13} color="var(--mantine-color-gray-5)" />
+                    <Text size="xs" c="dimmed">
+                      {dayLabel(item.day_of_week)} • Tiết {item.period_start}–{item.period_end}
+                    </Text>
+                  </Group>
+                  {item.teacher && (
+                    <Group gap={4}>
+                      <IconUser size={13} color="var(--mantine-color-gray-5)" />
+                      <Text size="xs" c="dimmed">{item.teacher}</Text>
+                    </Group>
+                  )}
+                </Group>
 
+                <Divider />
+
+                {/* 3 nút hành động */}
+                <Group gap={6}>
+                  <Button
+                    size="xs"
+                    color="red"
+                    variant="light"
+                    onClick={() => openPanel(item, "skip")}
+                  >
+                    Nghỉ
+                  </Button>
+                  <Button
+                    size="xs"
+                    color="teal"
+                    variant="light"
+                    onClick={() => openPanel(item, "extra")}
+                  >
+                    Bù
+                  </Button>
+                  <Button
+                    size="xs"
+                    color="gray"
+                    variant="light"
+                    onClick={() => openPanel(item, "edit")}
+                  >
+                    Sửa
+                  </Button>
+                </Group>
+              </Stack>
+            </Card>
+          ))}
+        </Stack>
+      )}
+
+      {/* PANEL HÀNH ĐỘNG */}
       <Modal
         opened={panelMode !== null}
         onClose={closePanel}

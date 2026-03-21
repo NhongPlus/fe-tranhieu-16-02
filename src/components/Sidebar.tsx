@@ -1,4 +1,4 @@
-import { Stack, NavLink, Button, Divider, Text } from "@mantine/core";
+import { Stack, NavLink, Button, Divider, Text, ScrollArea } from "@mantine/core";
 import { useNavigate, useLocation } from "react-router-dom";
 import { IconLayoutDashboard, IconCalendarPlus } from "@tabler/icons-react";
 import ViewSchedule from "../page/ViewSchedule";
@@ -9,9 +9,9 @@ export default function Sidebar() {
 
     return (
         <Stack h="100%" justify="space-between">
-            <Stack gap="xs">
-                <Text size="xs" fw={700} c="dimmed" tt="uppercase" px="md">Menu chính</Text>
-                
+            <ScrollArea offsetScrollbars type="never" pr={0}>
+                <Text size="xs" fw={700} c="dimmed" tt="uppercase" px="md" py={"md"}>Menu chính</Text>
+
                 <NavLink
                     label="Bảng điều khiển"
                     leftSection={<IconLayoutDashboard size={20} stroke={1.5} />}
@@ -30,7 +30,7 @@ export default function Sidebar() {
 
                 <ViewSchedule />
 
-            </Stack>
+            </ScrollArea>
 
             <Button variant="subtle" color="red" fullWidth onClick={() => {
                 localStorage.clear();
