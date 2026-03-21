@@ -11,7 +11,6 @@ import {
     ScrollArea,
     Paper,
     Container,
-    Text,
     Stack,
     Tooltip,
     Divider,
