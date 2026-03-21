@@ -28,7 +28,7 @@ export default function Sidebar() {
 
                 <Divider my="sm" label="Học tập" labelPosition="center" />
 
-                <ViewSchedule /> {/* Component này trả về nút Lịch học đã có của bạn */}
+                <ViewSchedule />
 
             </Stack>
 

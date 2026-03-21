@@ -13,16 +13,18 @@ export default function ViewSchedule() {
   const [error, setError] = useState<string | null>(null);
 
   const fetchEvents = async () => {
-    open(); 
+    open();
     setLoading(true);
     setError(null);
     try {
       const response = await getEvents();
+      console.log('response', response)
       // Đảm bảo lấy đúng mảng dữ liệu từ response
-      setEvents(Array.isArray(response.data) ? response.data : []);
+      setEvents(Array.isArray(response.data.data) ? response.data.data : []);
+      console.log("events", events);
     } catch (err: any) {
       console.error(err);
-      setError("Không thể tải lịch học. Vui lòng thử lại.");
+      setError(err.response?.data?.message || "Không thể tải lịch học. Vui lòng thử lại.");
     } finally {
       setLoading(false);
     }
@@ -59,7 +61,9 @@ export default function ViewSchedule() {
                 <Table.Tr>
                   <Table.Th>Tên môn</Table.Th>
                   <Table.Th>Phòng</Table.Th>
+                  <Table.Th>Giảng viên</Table.Th>
                   <Table.Th>Thứ</Table.Th>
+                  <Table.Th>Ca học</Table.Th>
                   <Table.Th>Tiết</Table.Th>
                   <Table.Th>Ngày BD - KT</Table.Th>
                 </Table.Tr>
@@ -69,7 +73,9 @@ export default function ViewSchedule() {
                   <Table.Tr key={item.id || index}>
                     <Table.Td fw={500}>{item.title}</Table.Td>
                     <Table.Td><Badge color="blue" variant="light">{item.room}</Badge></Table.Td>
-                    <Table.Td>Thứ {item.day_of_week}</Table.Td>
+                    <Table.Td>{item.teacher}</Table.Td>
+                    <Table.Td>{item.day_of_week}</Table.Td>
+                    <Table.Td>{item.session}</Table.Td>
                     <Table.Td>{item.period_start} - {item.period_end}</Table.Td>
                     <Table.Td style={{ whiteSpace: 'nowrap' }}>
                       <Text size="xs">{new Date(item.start_date).toLocaleDateString("vi-VN")}</Text>

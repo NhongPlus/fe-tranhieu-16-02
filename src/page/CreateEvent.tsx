@@ -63,7 +63,7 @@ export default function CreateEvent() {
     const updateRow = (index: number, field: keyof EventRow, value: any) => {
         const newRows = [...rows];
         (newRows[index] as any)[field] = value;
-        
+
         // Logic thông minh: Nếu nhập Ngày bắt đầu mà Ngày kết thúc trống, 
         // có thể gợi ý hoặc tự điền (tùy nghiệp vụ, ở đây tạm để người dùng tự nhập)
         setRows(newRows);
@@ -71,7 +71,7 @@ export default function CreateEvent() {
 
     const handleSubmit = async () => {
         const hasEmpty = rows.some(r => !r.title || !r.start_date || !r.end_date);
-        
+
         if (hasEmpty) {
             notifications.show({
                 title: "Thiếu thông tin",
@@ -97,7 +97,7 @@ export default function CreateEvent() {
                 color: "teal",
                 icon: <IconDeviceFloppy size={18} />,
             });
-            
+
             navigate("/dashboard");
         } catch (err: any) {
             notifications.show({
@@ -114,9 +114,9 @@ export default function CreateEvent() {
         <Container size="xl" py="xl">
             {/* Header Area */}
             <Stack gap="xs" mb="xl">
-                <Button 
-                    variant="subtle" 
-                    leftSection={<IconArrowLeft size={16} />} 
+                <Button
+                    variant="subtle"
+                    leftSection={<IconArrowLeft size={16} />}
                     w="fit-content"
                     onClick={() => navigate(-1)}
                     p={0}
@@ -126,7 +126,6 @@ export default function CreateEvent() {
                 <Group justify="space-between" align="flex-end">
                     <div>
                         <Title order={2} fw={800} c="blue.9">Nhập lịch học hàng loạt</Title>
-                        <Text c="dimmed" size="sm">Điền thông tin thời khóa biểu của bạn vào bảng dưới đây</Text>
                     </div>
                     <Button
                         color="teal"
@@ -141,11 +140,13 @@ export default function CreateEvent() {
             </Stack>
 
             <Paper withBorder radius="md" shadow="sm" style={{ overflow: "hidden" }}>
-                <ScrollArea h={600} offsetScrollbars>
-                    <Table 
-                        verticalSpacing="sm" 
+                <ScrollArea h={440} offsetScrollbars>
+                    <Table
+                        verticalSpacing="sm"
                         horizontalSpacing="md"
                         highlightOnHover
+                        striped
+                        withTableBorder
                         withColumnBorders
                         style={{ minWidth: 1400 }}
                     >
@@ -156,11 +157,11 @@ export default function CreateEvent() {
                                 <Table.Th style={{ width: 180 }}>Giảng viên</Table.Th>
                                 <Table.Th style={{ width: 130 }}>Thứ</Table.Th>
                                 <Table.Th style={{ width: 120 }}>Ca học</Table.Th>
-                                <Table.Th style={{ width: 100 }}>Tiết BD</Table.Th>
-                                <Table.Th style={{ width: 100 }}>Tiết KT</Table.Th>
+                                <Table.Th style={{ width: 80 }}>Tiết BD</Table.Th>
+                                <Table.Th style={{ width: 80 }}>Tiết KT</Table.Th>
                                 <Table.Th style={{ width: 160 }}>Ngày bắt đầu</Table.Th>
                                 <Table.Th style={{ width: 160 }}>Ngày kết thúc</Table.Th>
-                                <Table.Th style={{ width: 60 }}></Table.Th>
+                                <Table.Th style={{ width: 60 }}>Xóa</Table.Th>
                             </Table.Tr>
                         </Table.Thead>
 
@@ -225,6 +226,7 @@ export default function CreateEvent() {
                                             variant="unstyled"
                                             min={1} max={12}
                                             value={row.period_start}
+                                            hideControls
                                             onChange={(v) => updateRow(index, "period_start", v)}
                                         />
                                     </Table.Td>
@@ -233,6 +235,7 @@ export default function CreateEvent() {
                                             variant="unstyled"
                                             min={1} max={12}
                                             value={row.period_end}
+                                            hideControls
                                             onChange={(v) => updateRow(index, "period_end", v)}
                                         />
                                     </Table.Td>
@@ -271,7 +274,7 @@ export default function CreateEvent() {
                         </Table.Tbody>
                     </Table>
                 </ScrollArea>
-                
+
                 <Divider />
 
                 <Box p="md" bg="gray.0">
@@ -285,12 +288,6 @@ export default function CreateEvent() {
                     </Button>
                 </Box>
             </Paper>
-
-            <Group mt="xl" justify="center">
-                 <Text size="xs" c="dimmed">
-                    Mẹo: Bạn nên kiểm tra kỹ Ngày bắt đầu và Ngày kết thúc của học kỳ trước khi lưu.
-                 </Text>
-            </Group>
         </Container>
     );
 }
