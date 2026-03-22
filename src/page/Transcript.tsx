@@ -117,7 +117,7 @@ export default function Transcript() {
                             <Table.Tbody>
                                 {studied.map((item, index) => (
                                     <Table.Tr key={item.id || index}>
-                                        <Table.Td c="dimmed" size="sm">{index + 1}</Table.Td>
+                                        <Table.Td><Text size="sm" c="dimmed">{index + 1}</Text></Table.Td>
                                         <Table.Td fw={500}>{item.course_name}</Table.Td>
                                         <Table.Td>
                                             <Text size="xs" c="dimmed">{item.course_code}</Text>
@@ -167,7 +167,7 @@ export default function Transcript() {
                             <Table.Tbody>
                                 {notStudied.map((item, index) => (
                                     <Table.Tr key={item.id || index}>
-                                        <Table.Td c="dimmed" size="sm">{index + 1}</Table.Td>
+                                        <Table.Td><Text size="sm" c="dimmed">{index + 1}</Text></Table.Td>
                                         <Table.Td fw={500} c="dimmed">{item.course_name}</Table.Td>
                                         <Table.Td>
                                             <Text size="xs" c="dimmed">{item.course_code}</Text>

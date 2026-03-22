@@ -412,7 +412,7 @@ export default function GpaPage() {
                       key={course.course_code}
                       style={{ opacity: hasGrade ? 1 : 0.6 }}
                     >
-                      <Table.Td c="dimmed" size="sm">{idx + 1}</Table.Td>
+                      <Table.Td><Text size="sm" c="dimmed">{idx + 1}</Text></Table.Td>
                       <Table.Td>
                         <Text size="sm" fw={hasGrade ? 500 : 400}>
                           {course.course_name}

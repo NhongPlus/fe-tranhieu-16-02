@@ -1,6 +1,6 @@
 import { Stack, NavLink, Button, Divider, Text, ScrollArea } from "@mantine/core";
 import { useNavigate, useLocation } from "react-router-dom";
-import { IconLayoutDashboard, IconCalendarPlus, IconSchool } from "@tabler/icons-react";
+import { IconLayoutDashboard, IconCalendarPlus } from "@tabler/icons-react";
 import ViewSchedule from "../page/ViewSchedule";
 
 export default function Sidebar() {
