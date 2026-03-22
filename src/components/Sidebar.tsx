@@ -1,6 +1,6 @@
 import { Stack, NavLink, Button, Divider, Text, ScrollArea } from "@mantine/core";
 import { useNavigate, useLocation } from "react-router-dom";
-import { IconLayoutDashboard, IconCalendarPlus } from "@tabler/icons-react";
+import { IconLayoutDashboard, IconCalendarPlus, IconSchool } from "@tabler/icons-react";
 import ViewSchedule from "../page/ViewSchedule";
 
 export default function Sidebar() {
@@ -29,7 +29,8 @@ export default function Sidebar() {
                 <Divider my="sm" label="Học tập" labelPosition="center" />
 
                 <ViewSchedule />
-
+             
+               
             </ScrollArea>
 
             <Button variant="subtle" color="red" fullWidth onClick={() => {

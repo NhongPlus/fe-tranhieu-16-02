@@ -1,11 +1,9 @@
 import { useEffect, useState } from "react";
 import {
   Modal,
-  Table,
   Loader,
   Center,
   Text,
-  Badge,
   Stack,
   Group,
   Switch,
@@ -15,7 +13,6 @@ import {
   Divider,
   Button,
   Card,
-  Box,
 } from "@mantine/core";
 import { DateInput } from "@mantine/dates";
 import { IconCalendar, IconBook, IconMapPin, IconUser } from "@tabler/icons-react";

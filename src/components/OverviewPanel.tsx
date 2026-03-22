@@ -1,7 +1,9 @@
-import { Card, Stack, Text, Title, Group, ThemeIcon, Progress } from "@mantine/core";
-import { IconCalendarEvent, IconClock, IconStar } from "@tabler/icons-react";
+import { Card, Stack, Text, Title, Group, ThemeIcon, Progress, Button } from "@mantine/core";
+import { IconCalendarEvent, IconClock } from "@tabler/icons-react";
+import { useNavigate } from "react-router-dom";
 
 export default function OverviewPanel() {
+  const navigate = useNavigate();
   return (
     <Stack gap="md">
       <Title order={5} mb="xs">Tóm tắt tuần này</Title>
@@ -31,7 +33,7 @@ export default function OverviewPanel() {
         <Progress value={65} color="teal" size="sm" radius="xl" />
       </Card>
 
-      <Card withBorder radius="md" padding="sm" bg="blue.7" c="white">
+      {/* <Card withBorder radius="md" padding="sm" bg="blue.7" c="white">
         <Stack gap={4}>
           <Group justify="space-between">
             <IconStar size={20} />
@@ -39,7 +41,13 @@ export default function OverviewPanel() {
           </Group>
           <Text size="sm" fw={500}>Đừng quên chuẩn bị tài liệu cho môn Triết học sáng mai nhé!</Text>
         </Stack>
-      </Card>
+      </Card> */}
+      <Button onClick={() => { navigate("/transcript") }}>
+        Xem bảng điểm
+      </Button>
+      <Button onClick={() => { navigate("/gpa") }}>
+        Xem gpa
+      </Button>
     </Stack>
   );
 }

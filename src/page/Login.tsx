@@ -25,8 +25,13 @@ export default function Login() {
 
       // Lưu thông tin user
       localStorage.setItem("user", JSON.stringify(userData));
-      // Vì không có token, ta dùng ID của user làm 'token' giả để qua cổng ProtectedRoute
-      localStorage.setItem("token", userData.id);
+      // Dùng access_token do backend trả về
+      if (userData.access_token) {
+        localStorage.setItem("token", userData.access_token);
+      } else {
+        // Fallback cũ (nếu backend chưa trả access_token)
+        localStorage.setItem("token", userData.id);
+      }
 
       nprogress.complete();
       notifications.show({
