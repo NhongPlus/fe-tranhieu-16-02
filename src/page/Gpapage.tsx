@@ -111,7 +111,6 @@ export default function GpaPage() {
     try {
       const res = await API.get("/gpa/summary");
       setSummary(res.data);
-      console.log(res.data);
       setTargetGpa(res.data.target_gpa);
     } catch {
       notifications.show({ message: "Không thể tải GPA", color: "red" });
@@ -124,7 +123,7 @@ export default function GpaPage() {
     setLoadingCourses(true);
     try {
       const res = await API.get("/gpa/transcript");
-      const data: Course[] = Array.isArray(res.data) ? res.data : [];
+      const data: Course[] = Array.isArray(res.data.data) ? res.data.data : [];
       setCourses(data);
       // pre-fill input nếu đã có điểm
       const pre: Record<string, { score: string; semester: string }> = {};
@@ -229,7 +228,7 @@ export default function GpaPage() {
       : filter === "not_studied"
         ? notStudied
         : courses;
-
+  console.log('courses', courses);
   // ── Render ─────────────────────────────────────────────────────────────────
   return (
     <Box
@@ -393,7 +392,7 @@ export default function GpaPage() {
           <Center py="xl"><Loader size="md" /></Center>
         ) : (
           <ScrollArea style={{ flex: 1 }}>
-            <Table highlightOnHover withColumnBorders style={{ minWidth: 780 }}>
+            <Table highlightOnHover withColumnBorders style={{ minWidth: 780 }}  withTableBorder>
               <Table.Thead bg="gray.0" style={{ position: "sticky", top: 0, zIndex: 1 }}>
                 <Table.Tr>
                   <Table.Th style={{ width: 40 }}>#</Table.Th>
