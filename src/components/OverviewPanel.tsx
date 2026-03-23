@@ -48,6 +48,9 @@ export default function OverviewPanel() {
       <Button onClick={() => { navigate("/gpa") }}>
         Xem gpa
       </Button>
+      <Button onClick={() => { navigate("/gradeentry") }}>
+        Sửa điểm
+      </Button>
     </Stack>
   );
 }

@@ -26,6 +26,7 @@ import {
 } from "@tabler/icons-react";
 import API from "../api/axios";
 import { notifications } from "@mantine/notifications";
+import { useNavigate } from "react-router-dom";
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 interface GpaSummary {
@@ -90,8 +91,9 @@ export default function GpaPage() {
   const [targetGpa, setTargetGpa] = useState<number | string>(3.2);
   const [selectedPreset, setSelectedPreset] = useState("kha");
   const [submittingTarget, setSubmittingTarget] = useState(false);
+  const navigate = useNavigate();
 
-  // Transcript state
+  // Transcript state 
   const [courses, setCourses] = useState<Course[]>([]);
   const [loadingCourses, setLoadingCourses] = useState(false);
   const [filter, setFilter] = useState("all");
@@ -225,8 +227,8 @@ export default function GpaPage() {
     filter === "studied"
       ? studied
       : filter === "not_studied"
-      ? notStudied
-      : courses;
+        ? notStudied
+        : courses;
 
   // ── Render ─────────────────────────────────────────────────────────────────
   return (
@@ -242,6 +244,9 @@ export default function GpaPage() {
       {/* ═══ LEFT PANEL: GPA + Target ═══════════════════════════════════════ */}
       <Box style={{ width: 260, flexShrink: 0 }}>
         <ScrollArea h="100%">
+          <Button onClick={() => navigate(-1)}>
+            Main
+          </Button>
           <Stack gap="sm">
             <Title order={5} fw={700}>GPA & Mục tiêu</Title>
 

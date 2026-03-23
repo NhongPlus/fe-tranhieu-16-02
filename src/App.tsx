@@ -6,6 +6,7 @@ import ProtectedRoute from "./routes/ProtectedRoute";
 import CreateEvent from "./page/CreateEvent";
 import Transcript from "./page/Transcript";
 import Gpapage from "./page/Gpapage";
+import GradeEntry from "./page/Gradeentry";
 
 
 export default function App() {
@@ -16,6 +17,7 @@ export default function App() {
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
         <Route path="/gpa" element={<Gpapage />} />
+        <Route path="/gradeentry" element={<GradeEntry />} />
         <Route
           path="/transcript"
           element={
