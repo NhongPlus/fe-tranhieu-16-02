@@ -14,6 +14,7 @@ import {
   Table,
   Select,
   Button,
+  useMantineTheme,
 } from "@mantine/core";
 import { IconArrowUp, IconRobot, IconPlus } from "@tabler/icons-react"; // Dùng icon mũi tên đi lên giống ChatGPT
 import API from "../api/axios";
@@ -21,6 +22,7 @@ import API from "../api/axios";
 // ... (giữ nguyên interface Message và các logic handleSend cũ)
 
 export default function ChatPanel() {
+  const theme = useMantineTheme();
   const [messages, setMessages] = useState<any[]>([]);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
@@ -246,125 +248,342 @@ export default function ChatPanel() {
     );
   };
 
+  const chatGradient = `linear-gradient(135deg, ${theme.colors.orange?.[6] ?? "#a63300"} 0%, ${theme.colors.orange?.[5] ?? "#ff7949"} 100%)`;
+  const messageShadow = "0 10px 30px -5px rgba(45, 47, 47, 0.05), 0 20px 60px -10px rgba(45, 47, 47, 0.03)";
+
+  const suggestions = [
+    "Tóm tắt bài giảng",
+    "Lập kế hoạch học tập",
+    "Giải đáp bài tập",
+    "Xem lại lịch sử",
+  ];
+
+  const welcomeText =
+    "Chào bạn! Tôi là StudyMind AI. Hôm nay tôi có thể giúp gì cho quá trình học tập của bạn? Bạn có thể yêu cầu tôi tóm tắt bài giảng, giải bài tập hoặc lên kế hoạch ôn tập cho kỳ thi sắp tới.";
+
   return (
-    <Stack h="90%" gap={0} bg="white">
-      {/* Vùng nội dung chat (Giữ nguyên hoặc chỉnh padding) */}
-      <ScrollArea h="500" viewportRef={viewport}>
-        <Stack gap="xl" maw={800} mx="auto"> {/* Giới hạn độ rộng nội dung giống ChatGPT */}
-          {messages.map((msg, index) => (
+    <Stack h="100%" gap={0} style={{ background: "transparent" }}>
+      {/* Chat Content Area */}
+      <Box style={{ flex: 1, overflow: "hidden", padding: "40px 32px 0 32px" }}>
+        <ScrollArea h="100%" viewportRef={viewport}>
+          <Stack gap={24} maw={860} mx="auto" align="stretch">
+            {/* AI Welcome Message */}
             <Group
-              key={index}
-              justify={msg.role === "user" ? "flex-end" : "flex-start"}
+              style={{ maxWidth: "85%", alignSelf: "flex-start" }}
+              gap={16}
               align="flex-start"
-              gap="md"
+              wrap="nowrap"
             >
-              {msg.role === "bot" && (
-                <Avatar src={null} alt="AI" color="teal" radius="xl" size="sm">
-                  <IconRobot size={18} />
-                </Avatar>
-              )}
-              <Box style={{ maxWidth: "85%" }}>
-                <Text size="md" c={msg.role === "user" ? "dark.4" : "dark.9"} style={{
-                  lineHeight: 1.6,
-                  backgroundColor: msg.role === "user" ? "#f4f4f4" : "transparent",
-                  padding: msg.role === "user" ? "8px 16px" : "0px",
-                  borderRadius: "15px"
-                }}>
-                  {msg.content}
+              <Avatar
+                radius="xl"
+                size={40}
+                style={{ background: theme.colors.gray[1], flexShrink: 0 }}
+              >
+                <IconRobot size={18} />
+              </Avatar>
+              <Box style={{ flex: 1 }}>
+                <Paper
+                  radius="md"
+                  p="md"
+                  style={{
+                    background: theme.colors.gray[0],
+                    borderTopLeftRadius: 0,
+                    boxShadow: messageShadow,
+                  }}
+                >
+                  <Text style={{ lineHeight: 1.65 }}>{welcomeText}</Text>
+                </Paper>
+                <Text
+                  size="xs"
+                  style={{
+                    marginTop: 8,
+                    textTransform: "uppercase",
+                    letterSpacing: 1,
+                    fontWeight: 700,
+                    color: theme.colors.gray[6],
+                    opacity: 0.85,
+                  }}
+                >
+                  Vừa xong
                 </Text>
-                {msg.action === "get_grades" && renderDynamicTable(msg.data)}
-                {msg.action === "add_grade" && msg.data && (
-                  <Card withBorder mt="sm" p="sm">
-                    <Text size="sm" w={600}>Xác nhận nhập điểm</Text>
-                    <Text size="xs" mt="xs">Môn: {msg.data.course_name ?? msg.data.course_code}</Text>
-                    <Text size="xs">Điểm 10: {msg.data.score_10}</Text>
-                    <Text size="xs">TC: {msg.data.credits ?? msg.data.credit ?? "?"}</Text>
-
-                    <Select
-                      mt="xs"
-                      size="xs"
-                      label="Chọn học kỳ"
-                      data={ALLOWED_SEMESTERS.map((s) => ({ value: s, label: s }))}
-                      value={gradeConfirmSemester[index] || msg.data.semester || ""}
-                      placeholder="Chọn học kỳ"
-                      onChange={(value) => {
-                        if (value) setGradeConfirmSemester((prev) => ({ ...prev, [index]: value }));
-                      }}
-                    />
-
-                    <Group mt="xs" >
-                      <Button size="xs" color="gray" onClick={() => cancelGrade(index)}>
-                        Hủy
-                      </Button>
-                      <Button size="xs" color="green" onClick={() => confirmGrade(index)}>
-                        Xác nhận
-                      </Button>
-                    </Group>
-                  </Card>
-                )}
               </Box>
             </Group>
-          ))}
-          {loading && <Loader size="xs" variant="dots" color="gray" />}
-        </Stack>
-      </ScrollArea>
 
-      {/* VÙNG INPUT KIỂU CHATGPT */}
-      <Box p="md" pb="xl">
-        <Box maw={800} mx="auto" style={{ position: 'relative' }}>
-          <Paper
-            withBorder
-            radius={26} // Bo tròn lớn
-            shadow="sm"
-            p="4px"
+            {/* User/Bot Messages */}
+            {messages.map((msg, index) => {
+              const isUser = msg.role === "user";
+              return (
+                <Group
+                  key={index}
+                  gap={16}
+                  align="flex-start"
+                  wrap="nowrap"
+                  style={{
+                    maxWidth: "85%",
+                    alignSelf: isUser ? "flex-end" : "flex-start",
+                    flexDirection: isUser ? "row-reverse" : "row",
+                  }}
+                >
+                  {isUser ? (
+                    <Avatar
+                      size={40}
+                      radius="xl"
+                      style={{ flexShrink: 0 }}
+                      src="https://lh3.googleusercontent.com/aida-public/AB6AXuBJADHdjDfbL01kR_0k0gfMUyryDPJQN1Y11OEq__fnGW3_QD62nzpfhpP5XqMIeg_hmvHsfVlYKzDfF-pfpD0kNOz0EGAsGZ2Sz9ednWmcmfyqNvMVn3vIkSVM1yF2jZ6bpV83zA_gyAcy7cX6ozjTSYCLC45vhWEuxosef2BRK1q6vTvyLpQ1XGJjga0G6bb06Hamc32tfnF_Px2dal8CML2W97aK1j5PPwykXpH9D4tnvApixCqQmp4yacleqlGhsdNL90OWGG4"
+                    />
+                  ) : (
+                    <Avatar
+                      radius="xl"
+                      size={40}
+                      style={{ background: theme.colors.gray[1], flexShrink: 0 }}
+                    >
+                      <IconRobot size={18} />
+                    </Avatar>
+                  )}
+
+                  <Box style={{ flex: 1 }}>
+                    <Paper
+                      radius="md"
+                      p="md"
+                      style={{
+                        background: isUser ? theme.colors.orange[5] : theme.colors.gray[0],
+                        color: isUser ? theme.white : theme.black,
+                        borderTopRightRadius: isUser ? 0 : undefined,
+                        borderTopLeftRadius: !isUser ? 0 : undefined,
+                        boxShadow: messageShadow,
+                      }}
+                    >
+                      <Text style={{ lineHeight: 1.65 }}>{msg.content}</Text>
+                      {msg.action === "get_grades" && renderDynamicTable(msg.data)}
+
+                      {msg.action === "add_grade" && msg.data && (
+                        <Card
+                          withBorder
+                          mt="sm"
+                          p={4}
+                          radius="xl"
+                          style={{
+                            background: theme.white,
+                            borderColor: theme.colors.gray[3],
+                            boxShadow: theme.shadows.xl,
+                            overflow: "hidden",
+                          }}
+                        >
+                          <Box
+                            p="md"
+                            style={{
+                              background: theme.colors.gray[1],
+                              borderRadius: `calc(${theme.radius.xl} - 4px)`,
+                            }}
+                          >
+                            <Group justify="space-between" mb="lg">
+                              <Text fw={800} size="lg" style={{ letterSpacing: "-0.01em" }}>
+                                Xác nhận nhập điểm
+                              </Text>
+                              <Text fw={800} c="orange.7">
+                                analytics
+                              </Text>
+                            </Group>
+
+                            <Box
+                              mb="lg"
+                              style={{
+                                display: "grid",
+                                gridTemplateColumns: "repeat(2, minmax(0, 1fr))",
+                                gap: 12,
+                              }}
+                            >
+                              <Paper
+                                p="sm"
+                                radius="lg"
+                                shadow="xs"
+                                style={{ gridColumn: "1 / -1", background: theme.white }}
+                              >
+                                <Text size="xs" fw={700} c="dimmed" tt="uppercase" mb={4}>
+                                  Môn học
+                                </Text>
+                                <Text fw={700}>
+                                  {(msg.data.course_code ?? "N/A") + " - " + (msg.data.course_name ?? "Không rõ tên môn")}
+                                </Text>
+                              </Paper>
+
+                              <Paper p="sm" radius="lg" shadow="xs" style={{ background: theme.white }}>
+                                <Text size="xs" fw={700} c="dimmed" tt="uppercase" mb={4}>
+                                  Điểm 10
+                                </Text>
+                                <Text fw={800} size="xl" c="orange.7">
+                                  {msg.data.score_10 ?? "?"}
+                                </Text>
+                              </Paper>
+
+                              <Paper p="sm" radius="lg" shadow="xs" style={{ background: theme.white }}>
+                                <Text size="xs" fw={700} c="dimmed" tt="uppercase" mb={4}>
+                                  Tín chỉ (TC)
+                                </Text>
+                                <Text fw={700}>
+                                  {msg.data.credits ?? msg.data.credit ?? "?"}
+                                </Text>
+                              </Paper>
+
+                              <Paper
+                                p="sm"
+                                radius="xl"
+                                shadow="xs"
+                                style={{ gridColumn: "1 / -1", background: theme.white }}
+                              >
+                                <Select
+                                  size="sm"
+                                  label="Học kỳ"
+                                  data={ALLOWED_SEMESTERS.map((s) => ({ value: s, label: s }))}
+                                  value={gradeConfirmSemester[index] || msg.data.semester || ""}
+                                  placeholder="Chọn học kỳ"
+                                  onChange={(value) => {
+                                    if (value) {
+                                      setGradeConfirmSemester((prev) => ({ ...prev, [index]: value }));
+                                    }
+                                  }}
+                                />
+                              </Paper>
+                            </Box>
+
+                            <Group grow>
+                              <Button
+                                variant="light"
+                                color="gray"
+                                radius="xl"
+                                size="md"
+                                onClick={() => cancelGrade(index)}
+                              >
+                                Hủy
+                              </Button>
+                              <Button
+                                radius="xl"
+                                size="md"
+                                onClick={() => confirmGrade(index)}
+                                styles={{
+                                  root: {
+                                    background: `linear-gradient(135deg, ${theme.colors.orange[7]} 0%, ${theme.colors.orange[5]} 100%)`,
+                                  },
+                                }}
+                              >
+                                Xác nhận
+                              </Button>
+                            </Group>
+                          </Box>
+                        </Card>
+                      )}
+                    </Paper>
+                    <Text
+                      size="xs"
+                      style={{
+                        marginTop: 8,
+                        textTransform: "uppercase",
+                        letterSpacing: 1,
+                        fontWeight: 700,
+                        color: theme.colors.gray[6],
+                        opacity: 0.85,
+                        textAlign: isUser ? "right" : "left",
+                      }}
+                    >
+                      {isUser ? "1 phút trước" : "Đang xem"}
+                    </Text>
+                  </Box>
+                </Group>
+              );
+            })}
+
+            {loading && <Loader size="sm" variant="dots" color="gray" />}
+          </Stack>
+        </ScrollArea>
+      </Box>
+
+      {/* Footer Interaction Area */}
+      <Box
+        style={{
+          padding: "22px 32px",
+          borderTop: `1px solid ${theme.colors.gray[2]}`,
+          background: theme.colors.gray[0],
+        }}
+      >
+        <Stack gap={16} align="stretch">
+          {/* Action Suggestion Chips */}
+          <Group gap={10} style={{ flexWrap: "wrap" }}>
+            {suggestions.map((s) => (
+              <Button
+                key={s}
+                variant="light"
+                radius="xl"
+                color={theme.colors.orange?.[6] ? "orange" : undefined}
+                style={{
+                  background: "rgba(166,51,0,0.04)",
+                  borderColor: "rgba(166,51,0,0.08)",
+                  fontWeight: 700,
+                }}
+                onClick={() => setInput(s)}
+              >
+                {s}
+              </Button>
+            ))}
+          </Group>
+
+          {/* Input Field */}
+          <Group
             style={{
-              backgroundColor: "#f4f4f4", // Màu nền xám nhạt cực nhẹ
-              border: "1px solid #e5e5e5",
-              display: 'flex',
-              alignItems: 'flex-end'
+              width: "100%",
+              gap: 16,
+              alignItems: "flex-end",
             }}
           >
-            {/* Nút đính kèm bên trái */}
-            <ActionIcon size={36} radius="xl" variant="subtle" color="gray" m="4px">
-              <IconPlus size={20} />
-            </ActionIcon>
+            <Box style={{ flex: 1, position: "relative" }}>
+              <Textarea
+                variant="unstyled"
+                placeholder="Nhập câu hỏi hoặc yêu cầu của bạn tại đây..."
+                minRows={1}
+                maxRows={6}
+                autosize
+                value={input}
+                onChange={(e) => setInput(e.currentTarget.value)}
+                onKeyDown={handleKeyDown}
+                style={{
+                  width: "100%",
+                  padding: "14px 56px 14px 16px",
+                  background: theme.colors.gray[1],
+                  borderRadius: 12,
+                  border: "1px solid transparent",
+                }}
+              />
+            </Box>
 
-            {/* Ô nhập liệu tự mở rộng chiều cao */}
-            <Textarea
-              variant="unstyled"
-              placeholder="Message MindBot..."
-              autosize
-              minRows={1}
-              maxRows={8}
-              value={input}
-              onChange={(e) => setInput(e.currentTarget.value)}
-              onKeyDown={handleKeyDown}
-              style={{ flex: 1 }}
-              styles={{
-                input: {
-                  paddingTop: '10px',
-                  paddingBottom: '10px',
-                  fontSize: '16px',
-                  lineHeight: '1.5',
-                }
-              }}
-            />
-
-            {/* Nút gửi - Mũi tên lên trong hình tròn đen/xám */}
             <ActionIcon
               onClick={handleSend}
-              size={32}
-              radius="xl"
-              color={input.trim() ? "dark" : "gray.4"} // Hiện màu đen khi có chữ
-              variant="filled"
-              m="6px"
               disabled={!input.trim() || loading}
+              size={56}
+              radius="md"
+              style={{
+                background: chatGradient,
+                color: theme.white,
+                boxShadow: "0 10px 30px rgba(166,51,0,0.15)",
+                transition: "transform 120ms ease",
+              }}
             >
-              <IconArrowUp size={18} stroke={3} />
+              <IconArrowUp size={20} stroke={3} />
             </ActionIcon>
-          </Paper>
+          </Group>
 
-        </Box>
+          <Text
+            size="xs"
+            style={{
+              textAlign: "center",
+              marginTop: 4,
+              textTransform: "uppercase",
+              letterSpacing: 1,
+              color: theme.colors.gray[6],
+              fontWeight: 600,
+            }}
+          >
+            AI có thể đưa ra câu trả lời không chính xác. Hãy kiểm tra lại thông tin quan trọng.
+          </Text>
+        </Stack>
       </Box>
     </Stack>
   );

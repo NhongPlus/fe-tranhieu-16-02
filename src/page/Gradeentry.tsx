@@ -1,17 +1,62 @@
-import { useEffect, useState, memo } from "react";
+import { useEffect, useState, memo, useMemo, type ReactNode } from "react";
 import {
-  Box, Stack, Group, Title, Text, Badge, Card,
-  Table, ScrollArea, NumberInput, TextInput, ActionIcon,
-  Loader, Center, SegmentedControl, Divider, Tooltip, Select,
+  Box,
+  Stack,
+  Group,
+  Title,
+  Text,
+  Table,
+  ScrollArea,
+  NumberInput,
+  TextInput,
+  ActionIcon,
+  Loader,
+  Center,
+  SegmentedControl,
+  Tooltip,
+  Select,
   Button,
+  Grid,
+  SimpleGrid,
+  useMantineTheme,
 } from "@mantine/core";
 import {
-  IconDeviceFloppy, IconTrash, IconStar, IconSearch, IconEdit, IconX,
+  IconDeviceFloppy,
+  IconTrash,
+  IconStar,
+  IconSearch,
+  IconEdit,
+  IconX,
+  IconAlertTriangle,
+  IconInfoCircle,
+  IconChevronLeft,
+  IconChevronRight,
+  IconCheck,
+  IconClockHour4,
+  IconSchool,
+  IconHome,
+  IconChartBar,
+  IconCalendarMonth,
+  IconUser,
 } from "@tabler/icons-react";
 import API from "../api/axios";
 import { notifications } from "@mantine/notifications";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import { useForm } from "@mantine/form";
+import { useMediaQuery } from "@mantine/hooks";
+import Navbar from "../components/Navbar";
+
+// ─── Design tokens (Scholarly) ───────────────────────────────────────────────
+const PRIMARY = "#a63300";
+const TERTIARY = "#853d97";
+const SECONDARY = "#565d5f";
+const ON_SURFACE = "#2d2f2f";
+const ON_VARIANT = "#5a5c5c";
+const SURFACE = "#f6f6f6";
+const SURFACE_LOW = "#f0f1f1";
+const SURFACE_HIGH = "#e1e3e3";
+const SURFACE_HIGHEST = "#dbdddd";
+const OUTLINE_VARIANT = "rgba(172, 173, 173, 0.1)";
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 interface Course {
@@ -23,7 +68,7 @@ interface Course {
   score_4: number | null;
   score_letter: string | null;
   semester: string | null;
-  grade_id: string
+  grade_id: string;
 }
 
 interface PendingCourse {
@@ -32,17 +77,22 @@ interface PendingCourse {
   credits: number;
 }
 
-// ─── Helpers ─────────────────────────────────────────────────────────────────
-function scoreColor(letter: string | null) {
-  if (!letter) return "gray";
-  if (["A+", "A"].includes(letter)) return "teal";
-  if (["B+", "B"].includes(letter)) return "blue";
-  if (["C+", "C"].includes(letter)) return "yellow";
-  if (["D+", "D"].includes(letter)) return "orange";
-  return "red";
+function letterPillStyle(letter: string | null): { bg: string; color: string } {
+  if (!letter || letter === "—") return { bg: SURFACE_HIGH, color: "#767777" };
+  if (letter === "A+") return { bg: "rgba(133, 61, 151, 0.1)", color: TERTIARY };
+  if (["A", "A-"].includes(letter)) return { bg: "rgba(166, 51, 0, 0.1)", color: PRIMARY };
+  if (["B+", "B", "B-"].includes(letter)) return { bg: "rgba(86, 93, 95, 0.1)", color: SECONDARY };
+  return { bg: "rgba(166, 51, 0, 0.08)", color: PRIMARY };
 }
 
-// ─── GradeRow — isolated component, tự quản lý state ────────────────────────
+function score10Color(course: Course): string {
+  if (course.score_10 == null) return "#767777";
+  if (course.score_letter === "A+") return TERTIARY;
+  if (course.score_letter === "A" || course.score_letter === "A-") return PRIMARY;
+  return ON_SURFACE;
+}
+
+// ─── GradeRow — isolated component ────────────────────────────────────────────
 const GradeRow = memo(function GradeRow({
   course,
   idx,
@@ -56,6 +106,7 @@ const GradeRow = memo(function GradeRow({
   onSaved: () => void;
   onDeleted: () => void;
 }) {
+  const theme = useMantineTheme();
   const hasGrade = course.score_10 !== null;
   const [isEditing, setIsEditing] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -118,138 +169,185 @@ const GradeRow = memo(function GradeRow({
     }
   };
 
+  const pill = letterPillStyle(course.score_letter);
+  const rowHover = { "&:hover": { background: "rgba(240, 241, 241, 0.5)" } };
+
   return (
-    <Table.Tr
-      style={{
-        backgroundColor: isPriority
-          ? "var(--mantine-color-yellow-0)"
-          : hasGrade
-            ? "var(--mantine-color-teal-0)"
-            : undefined,
-      }}
-    >
-      {/* # */}
-      <Table.Td>
-        <Text size="xs" c="dimmed">{idx + 1}</Text>
-      </Table.Td>
-
-      {/* Tên môn */}
-      <Table.Td>
-        <Group gap={4} wrap="nowrap">
-          {isPriority && (
-            <Tooltip label="Ưu tiên nhập" withArrow>
-              <IconStar size={11}
-                color="var(--mantine-color-yellow-5)"
-                fill="var(--mantine-color-yellow-5)"
-              />
-            </Tooltip>
-          )}
-          <div>
-            <Text size="sm" fw={hasGrade ? 600 : 400}>{course.course_name}</Text>
-            <Text size="xs" c="dimmed">{course.course_code}</Text>
-          </div>
-        </Group>
-      </Table.Td>
-
-      {/* TC */}
-      <Table.Td ta="center">
-        <Text size="sm">{course.credits}</Text>
-      </Table.Td>
-
-      {/* Điểm 10 */}
-      <Table.Td ta="center">
-        <Text size="sm" fw={hasGrade ? 600 : 400} c={hasGrade ? "dark" : "dimmed"}>
-          {course.score_10 ?? "—"}
+    <Table.Tr style={rowHover}>
+      <Table.Td px="lg" py="md">
+        <Text size="sm" c={ON_VARIANT} fw={500}>
+          {String(idx + 1).padStart(2, "0")}
         </Text>
       </Table.Td>
 
-      {/* Điểm 4 */}
-      <Table.Td ta="center">
-        <Text size="sm">{course.score_4 ?? "—"}</Text>
+      <Table.Td px="lg" py="md">
+        <Group gap={6} wrap="nowrap" align="flex-start">
+          {isPriority && (
+            <Tooltip label="Ưu tiên nhập" withArrow>
+              <IconStar size={14} color={PRIMARY} fill={PRIMARY} style={{ flexShrink: 0, marginTop: 2 }} />
+            </Tooltip>
+          )}
+          <Box>
+            <Text fw={700} size="sm" c={ON_SURFACE}>
+              {course.course_name}
+            </Text>
+            <Text fz={11} fw={500} c={ON_VARIANT} mt={2}>
+              {course.course_code}
+            </Text>
+          </Box>
+        </Group>
       </Table.Td>
 
-      {/* Chữ */}
-      <Table.Td ta="center">
+      <Table.Td ta="center" px="lg" py="md">
+        <Text size="sm" c={ON_SURFACE}>
+          {course.credits}
+        </Text>
+      </Table.Td>
+
+      <Table.Td ta="center" px="lg" py="md">
+        <Text size="sm" fw={700} c={hasGrade ? score10Color(course) : ON_VARIANT}>
+          {hasGrade ? course.score_10 : "—"}
+        </Text>
+      </Table.Td>
+
+      <Table.Td ta="center" px="lg" py="md">
+        <Text size="sm" c={ON_SURFACE}>
+          {course.score_4 ?? "—"}
+        </Text>
+      </Table.Td>
+
+      <Table.Td ta="center" px="lg" py="md">
         {course.score_letter ? (
-          <Badge color={scoreColor(course.score_letter)} variant="filled" size="sm">
+          <Box
+            component="span"
+            px={8}
+            py={4}
+            style={{
+              borderRadius: theme.radius.sm,
+              fontWeight: 700,
+              fontSize: 13,
+              background: pill.bg,
+              color: pill.color,
+              display: "inline-block",
+            }}
+          >
             {course.score_letter}
-          </Badge>
+          </Box>
         ) : (
-          <Text c="dimmed" size="sm">—</Text>
+          <Box
+            component="span"
+            px={8}
+            py={4}
+            style={{
+              borderRadius: theme.radius.sm,
+              fontWeight: 700,
+              fontSize: 13,
+              background: SURFACE_HIGH,
+              color: "#767777",
+              display: "inline-block",
+            }}
+          >
+            —
+          </Box>
         )}
       </Table.Td>
 
-      {/* Học kỳ input */}
-      <Table.Td>
+      <Table.Td px="lg" py="md">
         {canInput ? (
           <TextInput
             placeholder="2024.1"
             size="xs"
+            styles={{
+              input: {
+                background: SURFACE_HIGHEST,
+                border: course.score_10 === null && !isEditing ? "2px dashed rgba(172,173,173,0.3)" : undefined,
+              },
+            }}
             {...form.getInputProps("semester")}
           />
         ) : (
-          <Text size="sm">{course.semester ?? "—"}</Text>
+          <Text size="sm" c={ON_VARIANT}>
+            {course.semester ?? "—"}
+          </Text>
         )}
       </Table.Td>
 
-      {/* Điểm nhập */}
-      <Table.Td>
+      <Table.Td px="lg" py="md">
         {canInput ? (
           <NumberInput
-            placeholder="0–10"
+            placeholder="0.0"
             size="xs"
+            w={64}
             min={0}
             max={10}
             step={0.1}
             decimalScale={1}
+            styles={{
+              input: {
+                background: SURFACE_HIGHEST,
+                border: "none",
+                textAlign: "center",
+                fontWeight: 700,
+                ...(course.score_10 === null && !isEditing
+                  ? { border: "2px dashed rgba(172,173,173,0.3)" }
+                  : {}),
+              },
+            }}
             {...form.getInputProps("score_10")}
           />
         ) : (
-          <Text size="sm" c="dimmed">—</Text>
+          <Text size="sm" c="dimmed">
+            —
+          </Text>
         )}
       </Table.Td>
 
-      {/* Thao tác */}
-      <Table.Td>
-        <Group gap={4} justify="center">
-          {/* Lưu */}
+      <Table.Td px="lg" py="md" style={{ textAlign: "right" }}>
+        <Group gap={4} justify="flex-end" wrap="nowrap">
           {canInput && (
             <Tooltip label="Lưu điểm" withArrow>
-              <ActionIcon size="sm" color="teal" variant="light"
-                loading={saving} onClick={handleSave}
+              <ActionIcon
+                size="md"
+                variant="subtle"
+                color="gray"
+                loading={saving}
+                onClick={handleSave}
+                styles={{
+                  root: {
+                    color: ON_VARIANT,
+                  },
+                }}
               >
-                <IconDeviceFloppy size={14} />
+                <IconDeviceFloppy size={20} />
               </ActionIcon>
             </Tooltip>
           )}
 
-          {/* Sửa / Huỷ */}
           {hasGrade && !isEditing && (
             <Tooltip label="Sửa điểm" withArrow>
-              <ActionIcon size="sm" color="blue" variant="light"
-                onClick={() => setIsEditing(true)}
-              >
-                <IconEdit size={14} />
+              <ActionIcon size="md" variant="subtle" color="gray" onClick={() => setIsEditing(true)}>
+                <IconEdit size={20} />
               </ActionIcon>
             </Tooltip>
           )}
           {hasGrade && isEditing && (
             <Tooltip label="Huỷ sửa" withArrow>
-              <ActionIcon size="sm" color="gray" variant="light"
-                onClick={() => setIsEditing(false)}
-              >
-                <IconX size={14} />
+              <ActionIcon size="md" variant="subtle" color="gray" onClick={() => setIsEditing(false)}>
+                <IconX size={20} />
               </ActionIcon>
             </Tooltip>
           )}
 
-          {/* Xoá */}
           {hasGrade && (
             <Tooltip label="Xoá điểm" withArrow>
-              <ActionIcon size="sm" color="red" variant="light"
-                loading={deleting} onClick={handleDelete}
+              <ActionIcon
+                size="md"
+                variant="subtle"
+                color="red"
+                loading={deleting}
+                onClick={handleDelete}
               >
-                <IconTrash size={14} />
+                <IconTrash size={20} />
               </ActionIcon>
             </Tooltip>
           )}
@@ -261,7 +359,10 @@ const GradeRow = memo(function GradeRow({
 
 // ─── Main Page ────────────────────────────────────────────────────────────────
 export default function GradeEntry() {
+  const theme = useMantineTheme();
   const navigate = useNavigate();
+  const isMobile = useMediaQuery("(max-width: 767px)");
+
   const [courses, setCourses] = useState<Course[]>([]);
   const [pending, setPending] = useState<PendingCourse[]>([]);
   const [loading, setLoading] = useState(false);
@@ -270,7 +371,6 @@ export default function GradeEntry() {
   const [filter, setFilter] = useState("all");
   const [semesterFilter, setSemesterFilter] = useState<string | null>(null);
 
-  // ── Fetch ──────────────────────────────────────────────────────────────────
   const fetchAll = async () => {
     setLoading(true);
     try {
@@ -287,16 +387,15 @@ export default function GradeEntry() {
     }
   };
 
-  useEffect(() => { fetchAll(); }, []);
+  useEffect(() => {
+    fetchAll();
+  }, []);
 
-  // ── Derived ────────────────────────────────────────────────────────────────
   const pendingCodes = new Set(pending.map((p) => p.course_code));
   const studied = courses.filter((c) => c.score_10 !== null);
   const notStudied = courses.filter((c) => c.score_10 === null);
 
-  const semesters = Array.from(
-    new Set(courses.map((c) => c.semester).filter(Boolean) as string[])
-  ).sort();
+  const semesters = Array.from(new Set(courses.map((c) => c.semester).filter(Boolean) as string[])).sort();
 
   const displayed = courses
     .filter((c) => {
@@ -308,166 +407,505 @@ export default function GradeEntry() {
     .filter((c) => {
       if (!search) return true;
       const q = search.toLowerCase();
-      return (
-        c.course_name.toLowerCase().includes(q) ||
-        c.course_code.toLowerCase().includes(q)
-      );
+      return c.course_name.toLowerCase().includes(q) || c.course_code.toLowerCase().includes(q);
     });
 
-  // ── Render ─────────────────────────────────────────────────────────────────
-  return (
-    <Box style={{ display: "flex", height: "calc(100vh - 80px)", gap: 16, overflow: "hidden", padding: 16 }}>
+  const gpaWeighted = useMemo(() => {
+    const graded = studied.filter((c) => c.score_4 != null && c.credits);
+    if (graded.length === 0) return null;
+    let pts = 0;
+    let cr = 0;
+    for (const c of graded) {
+      pts += (c.score_4 ?? 0) * c.credits;
+      cr += c.credits;
+    }
+    return cr > 0 ? pts / cr : null;
+  }, [studied]);
 
-      {/* ═══ LEFT: PENDING + STATS ══════════════════════════════════════════ */}
-      <Box style={{ width: 220, flexShrink: 0 }}>
-        <ScrollArea h="100%" type="never" offsetScrollbars overscrollBehavior="none">
-          <Button onClick={() => navigate(-1)}>
-            Main
-          </Button>
-          <Stack gap="sm" pb="md">
-            <Group gap={6}>
-              <IconStar size={15} color="var(--mantine-color-yellow-6)" />
-              <Text fw={700} size="sm">Ưu tiên nhập trước</Text>
+  const shell = (
+    <Box
+      component="main"
+      pb={isMobile ? 100 : 48}
+      pt={96}
+      px="md"
+      style={{
+        maxWidth: 1600,
+        margin: "0 auto",
+        minHeight: "100vh",
+        background: SURFACE,
+        color: ON_SURFACE,
+      }}
+    >
+      <Grid gutter="xl" align="flex-start">
+        {/* Left: priority */}
+        <Grid.Col span={{ base: 12, lg: 3 }}>
+          <Box
+            p="lg"
+            style={{
+              background: SURFACE_LOW,
+              borderRadius: theme.radius.md,
+            }}
+          >
+            <Group gap={8} mb="lg">
+              <IconAlertTriangle size={22} color={PRIMARY} />
+              <Title order={3} size="h4" fw={700} c={ON_SURFACE}>
+                Ưu tiên nhập trước
+              </Title>
             </Group>
-            <Text size="xs" c="dimmed">Môn tín chỉ cao chưa có điểm</Text>
-            <Divider />
 
-            {loading ? (
-              <Center py="md"><Loader size="sm" /></Center>
-            ) : pending.length === 0 ? (
-              <Text size="xs" c="dimmed" ta="center" py="sm">Không có môn ưu tiên</Text>
-            ) : (
-              <Stack gap="xs">
-                {pending.map((p) => (
-                  <Card key={p.course_code} withBorder radius="md" padding="xs"
-                    style={{ borderColor: "var(--mantine-color-yellow-3)" }}
-                  >
-                    <Text size="xs" fw={600} lineClamp={2}>{p.course_name}</Text>
-                    <Group justify="space-between" mt={4}>
-                      <Text size="xs" c="dimmed">{p.course_code}</Text>
-                      <Badge size="xs" color="yellow" variant="light">{p.credits} TC</Badge>
-                    </Group>
-                  </Card>
-                ))}
-              </Stack>
-            )}
+            <Stack gap="md">
+              {loading ? (
+                <Center py="md">
+                  <Loader size="sm" color="orange" />
+                </Center>
+              ) : pending.length === 0 ? (
+                <Text size="sm" c={ON_VARIANT} ta="center" py="sm">
+                  Không có môn ưu tiên
+                </Text>
+              ) : (
+                pending.map((p, i) => {
+                  const borderColor = i % 2 === 0 ? PRIMARY : TERTIARY;
+                  const barColor = i % 2 === 0 ? PRIMARY : TERTIARY;
+                  const progressPct = i === 0 ? 75 : i === 1 ? 0 : 40;
+                  const tag =
+                    i % 2 === 0
+                      ? { label: "Hết hạn sớm", bg: "rgba(166, 51, 0, 0.1)", color: PRIMARY }
+                      : { label: "Học phần mới", bg: "rgba(133, 61, 151, 0.1)", color: TERTIARY };
+                  return (
+                    <Box
+                      key={p.course_code}
+                      p="md"
+                      style={{
+                        background: "#ffffff",
+                        borderRadius: theme.radius.md,
+                        boxShadow: "0 4px 20px -5px rgba(45, 47, 47, 0.05)",
+                        borderLeft: `4px solid ${borderColor}`,
+                        cursor: "default",
+                        transition: "transform 0.15s ease",
+                      }}
+                    >
+                      <Group justify="space-between" align="flex-start" mb={8}>
+                        <Text
+                          fz={10}
+                          fw={700}
+                          tt="uppercase"
+                          px={8}
+                          py={4}
+                          style={{
+                            letterSpacing: "0.06em",
+                            borderRadius: 9999,
+                            background: tag.bg,
+                            color: tag.color,
+                          }}
+                        >
+                          {tag.label}
+                        </Text>
+                        <Text size="sm" c={ON_VARIANT}>
+                          {p.credits} TC
+                        </Text>
+                      </Group>
+                      <Text fw={700} c={ON_SURFACE}>
+                        {p.course_name}
+                      </Text>
+                      <Text size="sm" c={ON_VARIANT} mt={4}>
+                        Mã HP: {p.course_code}
+                      </Text>
+                      <Group gap={8} mt={12} align="center">
+                        <Box style={{ flex: 1, height: 6, background: "#e7e8e8", borderRadius: 9999, overflow: "hidden" }}>
+                          <Box style={{ height: "100%", width: `${progressPct}%`, background: barColor, borderRadius: 9999 }} />
+                        </Box>
+                        <Text fz={10} fw={700} c={ON_VARIANT}>
+                          {progressPct}%
+                        </Text>
+                      </Group>
+                    </Box>
+                  );
+                })
+              )}
 
-            <Divider />
-
-            <Stack gap={6}>
-              {[
-                { label: "Tổng môn", value: courses.length },
-                { label: "Đã nhập", value: studied.length, color: "teal" },
-                { label: "Chưa nhập", value: notStudied.length, color: "orange" },
-              ].map((s) => (
-                <Group key={s.label} justify="space-between">
-                  <Text size="xs" c="dimmed">{s.label}</Text>
-                  <Text size="xs" fw={700} c={s.color ?? "dark"}>{s.value}</Text>
+              <Box
+                p="md"
+                mt="lg"
+                style={{
+                  background: "rgba(221, 228, 230, 0.5)",
+                  borderRadius: theme.radius.md,
+                }}
+              >
+                <Group gap="sm" align="flex-start" wrap="nowrap">
+                  <IconInfoCircle size={20} color={SECONDARY} style={{ flexShrink: 0 }} />
+                  <Text size="sm" c="#4c5355" style={{ lineHeight: 1.65 }}>
+                    Các học phần ưu tiên nên hoàn tất nhập điểm đúng hạn để đảm bảo tiến độ xét học bổng và cập nhật GPA.
+                  </Text>
                 </Group>
-              ))}
+              </Box>
+
+              <Button variant="subtle" color="gray" size="xs" onClick={() => navigate(-1)}>
+                ← Trở về
+              </Button>
             </Stack>
-          </Stack>
-        </ScrollArea>
-      </Box>
+          </Box>
+        </Grid.Col>
 
-      {/* ═══ MAIN ═══════════════════════════════════════════════════════════ */}
-      <Box style={{ flex: 1, overflow: "hidden", display: "flex", flexDirection: "column", gap: 10 }}>
-        {/* Header */}
-        <Group justify="space-between">
-          <div>
-            <Title order={4} fw={700}>Nhập điểm học phần</Title>
-            <Text size="xs" c="dimmed">{studied.length}/{courses.length} môn đã nhập</Text>
-          </div>
-          <SegmentedControl
-            size="xs"
-            value={filter}
-            onChange={setFilter}
-            data={[
-              { label: "Tất cả", value: "all" },
-              { label: "Đã nhập", value: "studied" },
-              { label: "Chưa nhập", value: "not_studied" },
-            ]}
-          />
-        </Group>
-
-        {/* Filters */}
-        <Group gap="sm">
-          <TextInput
-            placeholder="Tìm tên môn hoặc mã môn..."
-            leftSection={<IconSearch size={14} />}
-            size="xs"
-            value={search}
-            onChange={(e) => setSearch(e.currentTarget.value)}
-            style={{ flex: 1 }}
-          />
-          <Select
-            placeholder="Lọc theo học kỳ"
-            size="xs"
-            clearable
-            data={semesters.map((s) => ({ value: s, label: s }))}
-            value={semesterFilter}
-            onChange={setSemesterFilter}
-            style={{ width: 160 }}
-          />
-        </Group>
-
-        {/* Table */}
-        {loading ? (
-          <Center style={{ flex: 1 }}><Loader size="md" /></Center>
-        ) : (
-          <ScrollArea style={{ flex: 1 }}>
-            <Table highlightOnHover withColumnBorders withTableBorder style={{ minWidth: 860 }}>
-              <Table.Thead bg="gray.0" style={{ position: "sticky", top: 0, zIndex: 1 }}>
-                <Table.Tr>
-                  <Table.Th style={{ width: 40 }}>#</Table.Th>
-                  <Table.Th>Tên học phần</Table.Th>
-                  <Table.Th style={{ width: 55 }} ta="center">TC</Table.Th>
-                  <Table.Th style={{ width: 80 }} ta="center">Điểm 10</Table.Th>
-                  <Table.Th style={{ width: 65 }} ta="center">Điểm 4</Table.Th>
-                  <Table.Th style={{ width: 55 }} ta="center">Chữ</Table.Th>
-                  <Table.Th style={{ width: 120 }}>Học kỳ</Table.Th>
-                  <Table.Th style={{ width: 110 }}>Nhập điểm</Table.Th>
-                  <Table.Th style={{ width: 100 }} ta="center">Thao tác</Table.Th>
-                </Table.Tr>
-              </Table.Thead>
-              <Table.Tbody>
-                {displayed.length === 0 ? (
-                  <Table.Tr>
-                    <Table.Td colSpan={9} ta="center" py="xl">
-                      <Text c="dimmed" size="sm">Không có môn nào phù hợp</Text>
-                    </Table.Td>
-                  </Table.Tr>
-                ) : (
-                  displayed.map((course, idx) => (
-                    <GradeRow
-                      key={course.course_code}
-                      course={course}
-                      idx={idx}
-                      isPriority={pendingCodes.has(course.course_code)}
-                      onSaved={fetchAll}
-                      onDeleted={fetchAll}
-                    />
-                  ))
-                )}
-              </Table.Tbody>
-            </Table>
-          </ScrollArea>
-        )}
-
-        {/* Legend */}
-        <Group gap="md" pt={4}>
-          {[
-            { color: "var(--mantine-color-teal-1)", label: `Đã nhập: ${studied.length} môn` },
-            { color: "var(--mantine-color-yellow-1)", label: "Ưu tiên nhập trước" },
-            { color: "transparent", label: `Chưa nhập: ${notStudied.length} môn` },
-          ].map((s) => (
-            <Group key={s.label} gap={6}>
-              <Box style={{ width: 10, height: 10, borderRadius: 2, background: s.color, border: "1px solid var(--mantine-color-gray-3)" }} />
-              <Text size="xs" c="dimmed">{s.label}</Text>
+        {/* Right: table */}
+        <Grid.Col span={{ base: 12, lg: 9 }}>
+          <Stack gap="xl">
+            <Group justify="space-between" align="flex-end" wrap="wrap" gap="md">
+              <Box>
+                <Title order={1} fw={800} style={{ fontSize: "1.875rem", letterSpacing: "-0.025em", color: ON_SURFACE }}>
+                  Nhập điểm học phần
+                </Title>
+                <Text size="sm" c={ON_VARIANT} mt={6}>
+                  Quản lý và cập nhật kết quả học tập của sinh viên. — {studied.length}/{courses.length} môn đã nhập
+                </Text>
+              </Box>
+              <Group gap="sm" wrap="wrap">
+                <Select
+                  placeholder="Lọc theo học kỳ"
+                  size="sm"
+                  clearable
+                  data={semesters.map((s) => ({ value: s, label: s }))}
+                  value={semesterFilter}
+                  onChange={setSemesterFilter}
+                  w={{ base: "100%", sm: 220 }}
+                  styles={{
+                    input: {
+                      background: SURFACE_HIGH,
+                      border: "none",
+                      borderRadius: theme.radius.md,
+                      fontWeight: 500,
+                    },
+                  }}
+                  rightSection={<Text c="dimmed">▾</Text>}
+                />
+                <Button
+                  size="sm"
+                  radius="md"
+                  fw={700}
+                  leftSection={<IconDeviceFloppy size={18} />}
+                  style={{
+                    background: PRIMARY,
+                    color: "#ffefeb",
+                    boxShadow: "0 10px 15px -3px rgba(166, 51, 0, 0.2)",
+                  }}
+                  onClick={() =>
+                    notifications.show({
+                      message: "Vui lòng dùng nút lưu trên từng dòng để ghi điểm an toàn.",
+                      color: "blue",
+                    })
+                  }
+                >
+                  Lưu tất cả
+                </Button>
+              </Group>
             </Group>
-          ))}
-        </Group>
+
+            <Group gap="sm" wrap="wrap">
+              <TextInput
+                placeholder="Tìm tên môn hoặc mã môn..."
+                leftSection={<IconSearch size={16} />}
+                size="sm"
+                value={search}
+                onChange={(e) => setSearch(e.currentTarget.value)}
+                style={{ flex: 1, minWidth: 200 }}
+                styles={{
+                  input: {
+                    background: "#ffffff",
+                    border: `1px solid ${OUTLINE_VARIANT}`,
+                  },
+                }}
+              />
+              <SegmentedControl
+                size="xs"
+                value={filter}
+                onChange={setFilter}
+                data={[
+                  { label: "Tất cả", value: "all" },
+                  { label: "Đã nhập", value: "studied" },
+                  { label: "Chưa nhập", value: "not_studied" },
+                ]}
+              />
+            </Group>
+
+            <Box
+              style={{
+                background: "#ffffff",
+                borderRadius: theme.radius.md,
+                boxShadow: "0 10px 40px -15px rgba(45, 47, 47, 0.08)",
+                overflow: "hidden",
+              }}
+            >
+              {loading ? (
+                <Center py={80}>
+                  <Loader color="orange" />
+                </Center>
+              ) : (
+                <ScrollArea type="scroll">
+                  <Table horizontalSpacing={0} verticalSpacing={0} withTableBorder={false} style={{ minWidth: 900 }}>
+                    <Table.Thead>
+                      <Table.Tr style={{ background: SURFACE_LOW, borderBottom: `1px solid ${OUTLINE_VARIANT}` }}>
+                        {["#", "Tên học phần", "TC", "Điểm 10", "Điểm 4", "Chữ", "Học kỳ", "Nhập điểm", "Thao tác"].map(
+                          (h, i) => (
+                            <Table.Th
+                              key={h}
+                              px="lg"
+                              py={20}
+                              style={{
+                                fontSize: 11,
+                                fontWeight: 700,
+                                textTransform: "uppercase",
+                                letterSpacing: "0.1em",
+                                color: ON_VARIANT,
+                                textAlign:
+                                  i === 2 || i === 3 || i === 4 || i === 5 ? "center" : i === 8 ? "right" : "left",
+                              }}
+                            >
+                              {h}
+                            </Table.Th>
+                          )
+                        )}
+                      </Table.Tr>
+                    </Table.Thead>
+                    <Table.Tbody>
+                      {displayed.length === 0 ? (
+                        <Table.Tr>
+                          <Table.Td colSpan={9} ta="center" py={48}>
+                            <Text c={ON_VARIANT} size="sm">
+                              Không có môn nào phù hợp
+                            </Text>
+                          </Table.Td>
+                        </Table.Tr>
+                      ) : (
+                        displayed.map((course, idx) => (
+                          <GradeRow
+                            key={course.course_code}
+                            course={course}
+                            idx={idx}
+                            isPriority={pendingCodes.has(course.course_code)}
+                            onSaved={fetchAll}
+                            onDeleted={fetchAll}
+                          />
+                        ))
+                      )}
+                    </Table.Tbody>
+                  </Table>
+                </ScrollArea>
+              )}
+
+              <Group
+                justify="space-between"
+                p="md"
+                wrap="wrap"
+                gap="md"
+                style={{
+                  background: SURFACE_LOW,
+                  borderTop: `1px solid ${OUTLINE_VARIANT}`,
+                }}
+              >
+                <Text size="sm" c={ON_VARIANT}>
+                  Hiển thị {displayed.length === 0 ? "0" : `1 – ${displayed.length}`} của {courses.length} học phần
+                  {search || semesterFilter || filter !== "all" ? " (sau lọc)" : ""}
+                </Text>
+                <Group gap={4}>
+                  <ActionIcon variant="subtle" color="gray" disabled>
+                    <IconChevronLeft size={20} />
+                  </ActionIcon>
+                  <Box
+                    w={32}
+                    h={32}
+                    style={{
+                      borderRadius: theme.radius.md,
+                      background: PRIMARY,
+                      color: "#ffefeb",
+                      fontWeight: 700,
+                      fontSize: 13,
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                    }}
+                  >
+                    1
+                  </Box>
+                  <ActionIcon variant="subtle" color="gray" disabled>
+                    <IconChevronRight size={20} />
+                  </ActionIcon>
+                </Group>
+              </Group>
+            </Box>
+
+            <SimpleGrid cols={{ base: 1, md: 3 }} spacing="lg">
+              <Group
+                p="lg"
+                wrap="nowrap"
+                align="center"
+                gap="md"
+                style={{ background: SURFACE_LOW, borderRadius: theme.radius.md }}
+              >
+                <Box
+                  w={48}
+                  h={48}
+                  style={{
+                    borderRadius: "50%",
+                    background: "rgba(166, 51, 0, 0.1)",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                  }}
+                >
+                  <IconCheck size={22} color={PRIMARY} />
+                </Box>
+                <Box>
+                  <Text size="xs" fw={700} tt="uppercase" c={ON_VARIANT} style={{ letterSpacing: "0.06em" }}>
+                    Đã nhập
+                  </Text>
+                  <Text fw={800} size="xl" c={ON_SURFACE}>
+                    {String(studied.length).padStart(2, "0")} / {courses.length}
+                  </Text>
+                </Box>
+              </Group>
+
+              <Group
+                p="lg"
+                wrap="nowrap"
+                align="center"
+                gap="md"
+                style={{ background: SURFACE_LOW, borderRadius: theme.radius.md }}
+              >
+                <Box
+                  w={48}
+                  h={48}
+                  style={{
+                    borderRadius: "50%",
+                    background: "rgba(86, 93, 95, 0.1)",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                  }}
+                >
+                  <IconClockHour4 size={22} color={SECONDARY} />
+                </Box>
+                <Box>
+                  <Text size="xs" fw={700} tt="uppercase" c={ON_VARIANT} style={{ letterSpacing: "0.06em" }}>
+                    Chưa nhập
+                  </Text>
+                  <Text fw={800} size="xl" c={ON_SURFACE}>
+                    {String(notStudied.length).padStart(2, "0")}
+                  </Text>
+                </Box>
+              </Group>
+
+              <Group
+                p="lg"
+                wrap="nowrap"
+                align="center"
+                gap="md"
+                style={{
+                  background: "rgba(255, 121, 73, 0.1)",
+                  borderRadius: theme.radius.md,
+                  border: "1px solid rgba(255, 121, 73, 0.2)",
+                }}
+              >
+                <Box
+                  w={48}
+                  h={48}
+                  style={{
+                    borderRadius: "50%",
+                    background: "rgba(166, 51, 0, 0.2)",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                  }}
+                >
+                  <IconSchool size={22} color={PRIMARY} />
+                </Box>
+                <Box>
+                  <Text size="xs" fw={700} tt="uppercase" c={PRIMARY} style={{ letterSpacing: "0.06em" }}>
+                    GPA tạm tính
+                  </Text>
+                  <Text fw={800} size="xl" c={PRIMARY}>
+                    {gpaWeighted != null ? gpaWeighted.toFixed(2) : "—"}
+                  </Text>
+                </Box>
+              </Group>
+            </SimpleGrid>
+          </Stack>
+        </Grid.Col>
+      </Grid>
+    </Box>
+  );
+
+  return (
+    <Box
+      style={{
+        background: SURFACE,
+        minHeight: "100vh",
+      }}
+    >
+      {shell}
+      <Navbar />
+      {/* Mobile bottom nav */}
+      <Box
+        hiddenFrom="md"
+        style={{
+          position: "fixed",
+          bottom: 0,
+          left: 0,
+          right: 0,
+          zIndex: 50,
+          display: "flex",
+          justifyContent: "space-around",
+          alignItems: "center",
+          padding: "8px 16px 16px",
+          height: 80,
+          background: "rgba(255, 255, 255, 0.85)",
+          backdropFilter: "blur(12px)",
+          borderTop: "1px solid rgba(172, 173, 173, 0.15)",
+          borderTopLeftRadius: theme.radius.lg,
+          borderTopRightRadius: theme.radius.lg,
+          boxShadow: "0 -10px 30px -5px rgba(45, 47, 47, 0.05)",
+        }}
+      >
+        <BottomLink to="/dashboard" icon={<IconHome size={22} />} label="Home" active />
+        <BottomLink to="/gpa" icon={<IconChartBar size={22} />} label="Grades" />
+        <BottomLink to="/create-event" icon={<IconCalendarMonth size={22} />} label="Schedule" />
+        <BottomLink to="/transcript" icon={<IconUser size={22} />} label="Profile" />
       </Box>
     </Box>
+  );
+}
+
+function BottomLink({
+  to,
+  icon,
+  label,
+  active,
+}: {
+  to: string;
+  icon: ReactNode;
+  label: string;
+  active?: boolean;
+}) {
+  return (
+    <Link
+      to={to}
+      style={{
+        display: "flex",
+        flexDirection: "column",
+        alignItems: "center",
+        justifyContent: "center",
+        gap: 4,
+        textDecoration: "none",
+        padding: "4px 12px",
+        borderRadius: 12,
+        background: active ? "rgba(255, 121, 73, 0.1)" : undefined,
+        color: active ? PRIMARY : SECONDARY,
+        fontSize: 10,
+        fontWeight: 600,
+        textTransform: "uppercase",
+        letterSpacing: "0.02em",
+      }}
+    >
+      {icon}
+      {label}
+    </Link>
   );
 }

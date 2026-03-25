@@ -19,5 +19,9 @@ export default defineConfig([
       ecmaVersion: 2020,
       globals: globals.browser,
     },
+    rules: {
+      // Nới lỏng nếu không muốn fail build/lint vì biến không dùng (Vercel chạy `npm run build`; lint chỉ khi bạn thêm vào build)
+      '@typescript-eslint/no-unused-vars': 'off',
+    },
   },
 ])

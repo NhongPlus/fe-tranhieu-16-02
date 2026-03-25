@@ -1,9 +1,66 @@
 import { useState } from "react";
-import { TextInput, PasswordInput, Button, Paper, Title, Stack, Text, Anchor } from "@mantine/core";
+import type { CSSProperties } from "react";
+import {
+  Box,
+  TextInput,
+  PasswordInput,
+  Button,
+  Paper,
+  Title,
+  Stack,
+  Text,
+  Anchor,
+  Group,
+  Divider,
+  ThemeIcon,
+  Center,
+} from "@mantine/core";
 import { useNavigate, Link } from "react-router-dom";
-import { nprogress } from "@mantine/nprogress"; // Import nprogress
-import { notifications } from "@mantine/notifications"; // Senior dùng cái này thay vì alert
+import { nprogress } from "@mantine/nprogress";
+import { notifications } from "@mantine/notifications";
 import axios from "../api/axios";
+import { IconChevronRight } from "@tabler/icons-react";
+
+const styles: { [key: string]: CSSProperties } = {
+  root: {
+    minHeight: "100vh",
+    display: "flex",
+    alignItems: "stretch",
+    justifyContent: "center",
+    background: "radial-gradient(circle at 10% 20%, rgba(255, 87, 34, 0.08), rgba(255, 255, 255, 1) 80%)",
+  },
+  left: {
+    flex: 1,
+    padding: "3rem",
+    display: "flex",
+    flexDirection: "column",
+    justifyContent: "center",
+    position: "relative",
+    overflow: "hidden",
+    backgroundColor: "rgba(255,255,255,0.85)",
+    backdropFilter: "blur(8px)",
+  },
+  right: {
+    width: 580,
+    borderLeft: "1px solid #e7eaee",
+    backgroundColor: "#ffffff",
+    display: "flex",
+    flexDirection: "column",
+    justifyContent: "center",
+    padding: "2rem",
+  },
+  heroTitle: {
+    fontSize: 48,
+    lineHeight: 1.1,
+    fontWeight: 800,
+    marginBottom: "1rem",
+  },
+  card: {
+    width: "100%",
+    maxWidth: 420,
+    margin: "0 auto",
+  },
+};
 
 export default function Login() {
   const navigate = useNavigate();
@@ -14,33 +71,28 @@ export default function Login() {
   const handleLogin = async () => {
     nprogress.start();
     setLoading(true);
+
     try {
       const res = await axios.post("/auth/login", {
         student_id: studentId,
-        password: password,
+        password,
       });
 
-      // Backend trả về: { id, student_id, full_name }
       const userData = res.data;
-
-      // Lưu thông tin user
       localStorage.setItem("user", JSON.stringify(userData));
-      // Dùng access_token do backend trả về
       if (userData.access_token) {
         localStorage.setItem("token", userData.access_token);
       } else {
-        // Fallback cũ (nếu backend chưa trả access_token)
         localStorage.setItem("token", userData.id);
       }
 
-      nprogress.complete();
       notifications.show({
         title: "Thành công",
-        message: `Chào mừng ${userData.full_name} trở lại!`,
+        message: `Chào mừng ${userData.full_name || "Sinh viên"} trở lại!`,
         color: "teal",
       });
 
-      // Redirect dứt điểm về dashboard
+      nprogress.complete();
       navigate("/dashboard");
     } catch (err: any) {
       nprogress.complete();
@@ -55,44 +107,75 @@ export default function Login() {
   };
 
   return (
-    <Paper w={420} p="xl" mx="auto" mt={120} radius="md" shadow="md" withBorder>
-      <Stack>
-        <Title order={2} ta="center" fw={800} c="blue.7">
-          STUDYMIND AI
-        </Title>
+    <Box style={styles.root}>
+      <Box style={styles.left}>
+        <Box mb="xl" pl={150} style={{ display: 'flex', flexDirection:'column', justifyContent: 'center', alignItems: 'flex-start', textAlign: 'left' }}>
+          <Group gap="xs" mb="xs" >
+            <ThemeIcon color="orange" radius="md" size="lg">
+              S
+            </ThemeIcon>
+            <Text size="xl" fw={800} style={{ letterSpacing: 1 }}>
+              STUDYMIND
+            </Text>
+          </Group>
+          <Text size="xs" c="orange" fw={700}  tt="uppercase" >
+            Next-Gen Academic AI
+          </Text>
+          <Title style={styles.heroTitle} order={1}>
+            Nâng tầm <Text style={styles.heroTitle} c={'#9D330A'}>Trí tuệ của bạn.</Text>
+          </Title>
+          <Group color="dimmed" mb="lg" style={{ maxWidth: 460 }}>
+            Đại nam university trường đại học đại nam Lorem ipsum dolor sit amet consectetur adipisicing elit. Tenetur error beatae ipsa corporis quo, eius repudiandae cumque magni illum sequi in tempore similique delectus impedit culpa dolores maxime? Ab, eaque?
+            <Center style={{ width: 36, height: 36, borderRadius: 10, backgroundColor: "#FFECE4" }}>
+              <Text size="xs" color="#FF5722" fw={700}>AI</Text>
+            </Center>
+            <Text size="sm" color="dimmed">Trusted by students globally</Text>
+          </Group>
+        </Box>
+      </Box>
 
-        <TextInput
-          label="Mã sinh viên"
-          placeholder="Nhập mã sinh viên của bạn"
-          value={studentId}
-          onChange={(e) => setStudentId(e.currentTarget.value)}
-          required
-        />
-
-        <PasswordInput
-          label="Mật khẩu"
-          placeholder="••••••••"
-          value={password}
-          onChange={(e) => setPassword(e.currentTarget.value)}
-          required
-        />
-
-        <Button
-          fullWidth
-          mt="md"
-          onClick={handleLogin}
-          loading={loading} // Nút cũng sẽ quay quay đồng bộ với progress bar
-        >
-          Đăng nhập
-        </Button>
-
-        <Text size="sm" ta="center">
-          Chưa có tài khoản?{" "}
-          <Anchor component={Link} to="/register" fw={700}>
-            Đăng ký ngay
-          </Anchor>
-        </Text>
-      </Stack>
-    </Paper>
+      <Box style={styles.right}>
+        <Paper style={styles.card} radius="lg" shadow="md" withBorder p="xl">
+          <Stack gap="md">
+            <Group align="center" mb="xs">
+              <Title order={3}>Login</Title>
+              <Text size="xs" color="dimmed">
+                StudyMind AI portal
+              </Text>
+            </Group>
+            <Divider />
+            <TextInput
+              label="Student ID"
+              placeholder="STU-000-000"
+              value={studentId}
+              onChange={(e) => setStudentId(e.currentTarget.value)}
+              required
+            />
+            <PasswordInput
+              label="Password"
+              placeholder="••••••••"
+              value={password}
+              onChange={(e) => setPassword(e.currentTarget.value)}
+              required
+            />
+            <Button fullWidth onClick={handleLogin} loading={loading} radius="md" color="orange">
+              Access Portal <IconChevronRight size={16} style={{ marginLeft: 8 }} />
+            </Button>
+            <Text size="xs" color="dimmed" ta="center">
+              By continuing, you agree to StudyMind&apos;s{' '}
+              <Anchor component="a" href="#" size="xs">
+                Terms of intelligence
+              </Anchor>
+            </Text>
+            <Text size="sm" ta="center">
+              Chưa có tài khoản?{' '}
+              <Anchor component={Link} to="/register" fw={700}>
+                Đăng ký ngay
+              </Anchor>
+            </Text>
+          </Stack>
+        </Paper>
+      </Box>
+    </Box>
   );
 }
