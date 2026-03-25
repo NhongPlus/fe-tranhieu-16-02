@@ -1,12 +1,75 @@
-import { AppShell, Burger, Group, Title, useMantineTheme } from "@mantine/core";
+import { AppShell, Burger, Button, Group, Title, useMantineTheme, Text, Loader } from "@mantine/core";
 import { useDisclosure } from "@mantine/hooks";
+import { useEffect, useState } from "react";
 import Sidebar from "../components/Sidebar";
 import ChatPanel from "../components/ChatPanel";
 import OverviewPanel from "../components/OverviewPanel";
+import { getTelegramStatus, unlinkTelegram } from "../api/telegram";
 
 export default function Dashboard() {
   const [opened, { toggle }] = useDisclosure();
   const theme = useMantineTheme();
+
+  const [telegramLinked, setTelegramLinked] = useState<boolean | null>(null);
+  const [telegramLink, setTelegramLink] = useState<string | null>(null);
+  const [loadingTelegram, setLoadingTelegram] = useState(false);
+
+  const loadTelegramStatus = async () => {
+    setLoadingTelegram(true);
+    try {
+      const res = await getTelegramStatus();
+      setTelegramLinked(Boolean(res.data?.is_telegram_linked));
+      setTelegramLink(res.data?.telegram_link ?? null);
+    } catch (error) {
+      setTelegramLinked(false);
+      setTelegramLink(null);
+    } finally {
+      setLoadingTelegram(false);
+    }
+  };
+
+  useEffect(() => {
+    loadTelegramStatus();
+  }, []);
+
+  const handleLinkTelegram = () => {
+    if (!telegramLink) return;
+    window.open(telegramLink, "_blank");
+
+    // poll trạng thái 10 lần mỗi 3s, nếu liên kết true thì dừng ngay
+    let tries = 0;
+    const maxTries = 10;
+    const intervalId = setInterval(async () => {
+      tries += 1;
+      try {
+        const res = await getTelegramStatus();
+        const linked = Boolean(res.data?.is_telegram_linked);
+        const link = res.data?.telegram_link ?? null;
+        setTelegramLinked(linked);
+        setTelegramLink(link);
+
+        if (linked || tries >= maxTries) {
+          clearInterval(intervalId);
+        }
+      } catch {
+        if (tries >= maxTries) {
+          clearInterval(intervalId);
+        }
+      }
+    }, 3000);
+  };
+
+  const handleUnlinkTelegram = async () => {
+    setLoadingTelegram(true);
+    try {
+      await unlinkTelegram();
+      await loadTelegramStatus();
+    } catch {
+      // bỏ qua, status giữ nguyên
+    } finally {
+      setLoadingTelegram(false);
+    }
+  };
 
   return (
     <AppShell
@@ -19,9 +82,32 @@ export default function Dashboard() {
       }}
     >
       <AppShell.Header p="md">
-        <Group h="100%" px="md">
-          <Burger opened={opened} onClick={toggle} hiddenFrom="sm" size="sm" />
-          <Title order={3} c="blue.7">StudyMind AI 🤖</Title>
+        <Group h="100%" px="md" justify="space-between">
+          <div>
+            <Burger opened={opened} onClick={toggle} hiddenFrom="sm" size="sm" />
+            <Title order={3} c="blue.7">StudyMind AI 🤖</Title>
+          </div>
+          <Group spacing="xs">
+            {loadingTelegram ? (
+              <Loader size="xs" />
+            ) : telegramLinked ? (
+              <>
+                <Text size="sm" c="teal">Đã liên kết Telegram</Text>
+                <Button color="red" size="xs" onClick={handleUnlinkTelegram} loading={loadingTelegram}>
+                  Unlink
+                </Button>
+              </>
+            ) : (
+              <Button
+                color="blue"
+                size="xs"
+                onClick={handleLinkTelegram}
+                disabled={!telegramLink || loadingTelegram}
+              >
+                {telegramLink ? "Liên kết Telegram" : "Chưa có link"}
+              </Button>
+            )}
+          </Group>
         </Group>
       </AppShell.Header>
 

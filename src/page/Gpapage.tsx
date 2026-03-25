@@ -19,6 +19,7 @@ import {
   Title,
   SegmentedControl,
 } from "@mantine/core";
+import { useForm } from "@mantine/form";
 import {
   IconTargetArrow,
   IconTrash,
@@ -88,20 +89,17 @@ export default function GpaPage() {
   // Summary state
   const [summary, setSummary] = useState<GpaSummary | null>(null);
   const [loadingSummary, setLoadingSummary] = useState(false);
-  const [targetGpa, setTargetGpa] = useState<number | string>(3.2);
-  const [selectedPreset, setSelectedPreset] = useState("kha");
   const [submittingTarget, setSubmittingTarget] = useState(false);
   const navigate = useNavigate();
+
+  const [targetGpaInput, setTargetGpaInput] = useState(3.2);
+  const [preset, setPreset] = useState("kha");
+
 
   // Transcript state 
   const [courses, setCourses] = useState<Course[]>([]);
   const [loadingCourses, setLoadingCourses] = useState(false);
   const [filter, setFilter] = useState("all");
-
-  // Inline input state: { [course_code]: { score_10, semester } }
-  const [inputMap, setInputMap] = useState<
-    Record<string, { score: string; semester: string }>
-  >({});
   const [savingMap, setSavingMap] = useState<Record<string, boolean>>({});
   const [deletingMap, setDeletingMap] = useState<Record<string, boolean>>({});
 
@@ -111,7 +109,8 @@ export default function GpaPage() {
     try {
       const res = await API.get("/gpa/summary");
       setSummary(res.data);
-      setTargetGpa(res.data.target_gpa);
+      setTargetGpaInput(res.data.target_gpa);
+      setPreset(res.data.target_gpa >= 3.6 ? "xuat_sac" : res.data.target_gpa >= 3.2 ? "gioi" : res.data.target_gpa >= 2.5 ? "kha" : "trung_binh");
     } catch {
       notifications.show({ message: "Không thể tải GPA", color: "red" });
     } finally {
@@ -125,17 +124,6 @@ export default function GpaPage() {
       const res = await API.get("/gpa/transcript");
       const data: Course[] = Array.isArray(res.data.data) ? res.data.data : [];
       setCourses(data);
-      // pre-fill input nếu đã có điểm
-      const pre: Record<string, { score: string; semester: string }> = {};
-      data.forEach((c) => {
-        if (c.score_10 !== null) {
-          pre[c.course_code] = {
-            score: String(c.score_10),
-            semester: c.semester ?? "",
-          };
-        }
-      });
-      setInputMap(pre);
     } catch {
       notifications.show({ message: "Không thể tải bảng điểm", color: "red" });
     } finally {
@@ -150,7 +138,7 @@ export default function GpaPage() {
 
   // ── Handlers ───────────────────────────────────────────────────────────────
   const handleSetTarget = async () => {
-    const val = Number(targetGpa);
+    const val = Number(targetGpaInput);
     if (!val || val <= 0 || val > 4) {
       notifications.show({ message: "GPA phải từ 0 đến 4", color: "red" });
       return;
@@ -159,10 +147,10 @@ export default function GpaPage() {
     try {
       await API.patch("/gpa/target", {
         target_gpa: val,
-        preset: selectedPreset,
+        preset,
       });
       notifications.show({ message: `Đã đặt mục tiêu GPA: ${val}`, color: "teal" });
-      fetchSummary();
+      await fetchSummary();
     } catch {
       notifications.show({ message: "Lỗi khi đặt mục tiêu", color: "red" });
     } finally {
@@ -170,23 +158,40 @@ export default function GpaPage() {
     }
   };
 
+  const ALLOWED_SEMESTERS = ["2024.1", "2024.2", "2025.1"];
+
   const handleSaveGrade = async (course: Course) => {
-    const inp = inputMap[course.course_code];
-    if (!inp?.score || !inp?.semester) {
+    const semesterInput = document.getElementById(`semester-${course.course_code}`) as HTMLInputElement | null;
+    const scoreInput = document.getElementById(`score-${course.course_code}`) as HTMLInputElement | null;
+
+    const semester = semesterInput?.value.trim();
+    const scoreValue = scoreInput?.value;
+
+    if (!semester || !scoreValue) {
       notifications.show({ message: "Nhập đủ điểm và học kỳ", color: "red" });
       return;
     }
-    const score = Number(inp.score);
+
+    if (!ALLOWED_SEMESTERS.includes(semester)) {
+      notifications.show({
+        message: `Học kỳ chỉ được chọn một trong: ${ALLOWED_SEMESTERS.join(", ")}`,
+        color: "red",
+      });
+      return;
+    }
+
+    const score = Number(scoreValue);
     if (isNaN(score) || score < 0 || score > 10) {
       notifications.show({ message: "Điểm phải từ 0 đến 10", color: "red" });
       return;
     }
+
     setSavingMap((p) => ({ ...p, [course.course_code]: true }));
     try {
       await API.post("/gpa/grades", {
         course_code: course.course_code,
         score_10: score,
-        semester: inp.semester,
+        semester,
       });
       notifications.show({ message: `Đã lưu điểm ${course.course_name}`, color: "teal" });
       await fetchCourses();
@@ -204,12 +209,6 @@ export default function GpaPage() {
     try {
       await API.delete(`/gpa/grades/${course.id}`);
       notifications.show({ message: `Đã xoá điểm ${course.course_name}`, color: "teal" });
-      // clear input
-      setInputMap((p) => {
-        const next = { ...p };
-        delete next[course.course_code];
-        return next;
-      });
       await fetchCourses();
       await fetchSummary();
     } catch {
@@ -228,7 +227,6 @@ export default function GpaPage() {
       : filter === "not_studied"
         ? notStudied
         : courses;
-  console.log('courses', courses);
   // ── Render ─────────────────────────────────────────────────────────────────
   return (
     <Box
@@ -322,13 +320,13 @@ export default function GpaPage() {
                     {PRESETS.map((p) => (
                       <Button
                         key={p.value}
-                        size="xs"
-                        variant={selectedPreset === p.value ? "filled" : "light"}
+                        size="md"
+                        variant={preset === p.value ? "filled" : "light"}
                         color="blue"
                         style={{ flex: 1, padding: "2px 4px" }}
                         onClick={() => {
-                          setSelectedPreset(p.value);
-                          setTargetGpa(p.gpa);
+                          setPreset(p.value);
+                          setTargetGpaInput(p.gpa);
                         }}
                       >
                         <Stack gap={0} align="center">
@@ -339,25 +337,27 @@ export default function GpaPage() {
                     ))}
                   </Group>
 
-                  <NumberInput
-                    placeholder="Nhập GPA mục tiêu"
-                    min={0}
-                    max={4}
-                    step={0.1}
-                    decimalScale={2}
-                    value={targetGpa}
-                    onChange={setTargetGpa}
-                    size="xs"
-                    mb="xs"
-                  />
-                  <Button
-                    size="xs"
-                    fullWidth
-                    loading={submittingTarget}
-                    onClick={handleSetTarget}
-                  >
-                    Đặt mục tiêu
-                  </Button>
+                  <form onSubmit={(e) => { e.preventDefault(); handleSetTarget(); }}>
+                    <NumberInput
+                      placeholder="Nhập GPA mục tiêu"
+                      min={0}
+                      max={4}
+                      step={0.1}
+                      decimalScale={2}
+                      size="xs"
+                      mb="xs"
+                      value={targetGpaInput}
+                      onChange={(value) => setTargetGpaInput(value ?? 0)}
+                    />
+                    <Button
+                      type="submit"
+                      size="xs"
+                      fullWidth
+                      loading={submittingTarget}
+                    >
+                      Đặt mục tiêu
+                    </Button>
+                  </form>
                 </Card>
               </>
             ) : null}
@@ -408,7 +408,6 @@ export default function GpaPage() {
               </Table.Thead>
               <Table.Tbody>
                 {displayed.map((course, idx) => {
-                  const inp = inputMap[course.course_code] ?? { score: "", semester: "" };
                   const hasGrade = course.score_10 !== null;
 
                   return (
@@ -447,40 +446,24 @@ export default function GpaPage() {
                       {/* Học kỳ input */}
                       <Table.Td>
                         <TextInput
+                          id={`semester-${course.course_code}`}
                           placeholder="2024.1"
                           size="xs"
-                          value={inp.semester}
-                          onChange={(e) =>
-                            setInputMap((p) => ({
-                              ...p,
-                              [course.course_code]: {
-                                ...inp,
-                                semester: e.currentTarget.value,
-                              },
-                            }))
-                          }
+                          defaultValue={course.semester ?? ""}
                         />
                       </Table.Td>
 
                       {/* Điểm input */}
                       <Table.Td>
                         <NumberInput
+                          id={`score-${course.course_code}`}
                           placeholder="0–10"
                           size="xs"
                           min={0}
                           max={10}
                           step={0.1}
                           decimalScale={1}
-                          value={inp.score}
-                          onChange={(v) =>
-                            setInputMap((p) => ({
-                              ...p,
-                              [course.course_code]: {
-                                ...inp,
-                                score: String(v),
-                              },
-                            }))
-                          }
+                          defaultValue={course.score_10 ?? undefined}
                         />
                       </Table.Td>
 

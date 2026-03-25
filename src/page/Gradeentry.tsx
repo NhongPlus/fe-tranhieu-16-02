@@ -1,4 +1,4 @@
-import { useEffect, useState, memo, useRef } from "react";
+import { useEffect, useState, memo } from "react";
 import {
   Box, Stack, Group, Title, Text, Badge, Card,
   Table, ScrollArea, NumberInput, TextInput, ActionIcon,
@@ -11,6 +11,7 @@ import {
 import API from "../api/axios";
 import { notifications } from "@mantine/notifications";
 import { useNavigate } from "react-router-dom";
+import { useForm } from "@mantine/form";
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 interface Course {
@@ -60,15 +61,19 @@ const GradeRow = memo(function GradeRow({
   const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState(false);
 
-  // Uncontrolled refs
-  const scoreRef = useRef<HTMLInputElement>(null);
-  const semesterRef = useRef<HTMLInputElement>(null);
+  const form = useForm({
+    mode: "uncontrolled",
+    initialValues: {
+      semester: course.semester ?? "",
+      score_10: course.score_10 ?? undefined,
+    },
+  });
 
   const canInput = !hasGrade || isEditing;
 
   const handleSave = async () => {
-    const score = parseFloat(scoreRef.current?.value ?? "");
-    const semester = semesterRef.current?.value?.trim() ?? "";
+    const semester = form.values.semester?.trim() ?? "";
+    const score = Number(form.values.score_10);
 
     if (isNaN(score) || score < 0 || score > 10) {
       notifications.show({ message: "Điểm phải từ 0 đến 10", color: "red" });
@@ -178,10 +183,9 @@ const GradeRow = memo(function GradeRow({
       <Table.Td>
         {canInput ? (
           <TextInput
-            ref={semesterRef}
             placeholder="2024.1"
             size="xs"
-            defaultValue={course.semester ?? ""}
+            {...form.getInputProps("semester")}
           />
         ) : (
           <Text size="sm">{course.semester ?? "—"}</Text>
@@ -192,14 +196,13 @@ const GradeRow = memo(function GradeRow({
       <Table.Td>
         {canInput ? (
           <NumberInput
-            ref={scoreRef}
             placeholder="0–10"
             size="xs"
             min={0}
             max={10}
             step={0.1}
             decimalScale={1}
-            defaultValue={course.score_10 ?? undefined}
+            {...form.getInputProps("score_10")}
           />
         ) : (
           <Text size="sm" c="dimmed">—</Text>

@@ -107,7 +107,6 @@ export default function ViewSchedule() {
         const allEvents = Array.isArray(response.data.data) ? response.data.data : [];
         setEvents(filterEventsThisWeek(allEvents));
 
-        console.log("filterEventsThisWeek(allEvents)", filterEventsThisWeek(allEvents));
       } catch {
         setError("Không thể tải lịch học. Vui lòng thử lại.");
       } finally {
