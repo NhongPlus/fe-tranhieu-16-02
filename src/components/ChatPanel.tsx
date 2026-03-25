@@ -13,6 +13,7 @@ import {
   Loader,
   Table,
   Select,
+  Button,
 } from "@mantine/core";
 import { IconArrowUp, IconRobot, IconPlus } from "@tabler/icons-react"; // Dùng icon mũi tên đi lên giống ChatGPT
 import API from "../api/axios";
@@ -24,7 +25,6 @@ export default function ChatPanel() {
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
   const viewport = useRef<HTMLDivElement>(null);
-
   const normalizeGrades = (raw: any): any[] => {
     if (!raw) return [];
 
@@ -162,13 +162,24 @@ export default function ChatPanel() {
     }
 
     try {
+      const user = JSON.parse(localStorage.getItem("user") || "{}");
+      const studentId = msg.data.student_id || user.student_id || null;
+      if (!studentId) {
+        setMessages((prev) => [...prev, { role: "bot", content: "Không có student_id, không thể lưu điểm." }]);
+        return;
+      }
+
       await API.post("/gpa/grades/confirm", {
         pending_id: msg.pending_id || msg.data.pending_id,
+        student_id: studentId,
         ...msg.data,
         semester,
       });
+
+      // Chạy ok thì set success flag và thông báo
       setMessages((prev) => prev.filter((_, i) => i !== msgIndex));
-      setMessages((prev) => [...prev, { role: "bot", content: "Đã xác nhận điểm, đang cập nhật bảng..." }]);
+      setMessages((prev) => [...prev, { role: "bot", content: "Đã xác nhận điểm" }]);
+
       // Có thể gọi fetch lại bảng nếu cần từ ChatPanel trực tiếp.
     } catch {
       setMessages((prev) => [...prev, { role: "bot", content: "Xác nhận thất bại, thử lại" }]);
@@ -264,7 +275,7 @@ export default function ChatPanel() {
                 {msg.action === "get_grades" && renderDynamicTable(msg.data)}
                 {msg.action === "add_grade" && msg.data && (
                   <Card withBorder mt="sm" p="sm">
-                    <Text size="sm" weight={600}>Xác nhận nhập điểm</Text>
+                    <Text size="sm" w={600}>Xác nhận nhập điểm</Text>
                     <Text size="xs" mt="xs">Môn: {msg.data.course_name ?? msg.data.course_code}</Text>
                     <Text size="xs">Điểm 10: {msg.data.score_10}</Text>
                     <Text size="xs">TC: {msg.data.credits ?? msg.data.credit ?? "?"}</Text>
@@ -281,7 +292,7 @@ export default function ChatPanel() {
                       }}
                     />
 
-                    <Group mt="xs" position="right" spacing="xs">
+                    <Group mt="xs" >
                       <Button size="xs" color="gray" onClick={() => cancelGrade(index)}>
                         Hủy
                       </Button>

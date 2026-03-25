@@ -87,7 +87,7 @@ export default function Dashboard() {
             <Burger opened={opened} onClick={toggle} hiddenFrom="sm" size="sm" />
             <Title order={3} c="blue.7">StudyMind AI 🤖</Title>
           </div>
-          <Group spacing="xs">
+          <Group gap="xs">
             {loadingTelegram ? (
               <Loader size="xs" />
             ) : telegramLinked ? (

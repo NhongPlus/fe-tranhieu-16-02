@@ -109,8 +109,9 @@ export default function GpaPage() {
     try {
       const res = await API.get("/gpa/summary");
       setSummary(res.data);
-      setTargetGpaInput(res.data.target_gpa);
-      setPreset(res.data.target_gpa >= 3.6 ? "xuat_sac" : res.data.target_gpa >= 3.2 ? "gioi" : res.data.target_gpa >= 2.5 ? "kha" : "trung_binh");
+      const target = Number(res.data.target_gpa ?? 0);
+      setTargetGpaInput(Number.isFinite(target) ? target : 0);
+      setPreset(target >= 3.6 ? "xuat_sac" : target >= 3.2 ? "gioi" : target >= 2.5 ? "kha" : "trung_binh");
     } catch {
       notifications.show({ message: "Không thể tải GPA", color: "red" });
     } finally {
@@ -347,7 +348,15 @@ export default function GpaPage() {
                       size="xs"
                       mb="xs"
                       value={targetGpaInput}
-                      onChange={(value) => setTargetGpaInput(value ?? 0)}
+                      onChange={(value) => {
+                        const normalized =
+                          typeof value === "number"
+                            ? value
+                            : value === undefined || value === null
+                            ? 0
+                            : Number(value);
+                        setTargetGpaInput(Number.isFinite(normalized) ? normalized : 0);
+                      }}
                     />
                     <Button
                       type="submit"
