@@ -1062,9 +1062,9 @@ export default function Dashboard() {
       >
         {isMdUp && (
           <Paper
-            radius="xl"
+            radius="lg"
             withBorder
-            p="xs"
+            p="md"
             style={{
               background: theme.white,
               borderColor: theme.colors.orange[1],

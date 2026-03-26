@@ -449,7 +449,7 @@ export default function GradeEntry() {
             <Group gap={8} mb="lg">
               <IconAlertTriangle size={22} color={PRIMARY} />
               <Title order={3} size="h4" fw={700} c={ON_SURFACE}>
-                Ưu tiên nhập trước
+                Ưu tiên tín chỉ cao
               </Title>
             </Group>
 
@@ -467,10 +467,7 @@ export default function GradeEntry() {
                   const borderColor = i % 2 === 0 ? PRIMARY : TERTIARY;
                   const barColor = i % 2 === 0 ? PRIMARY : TERTIARY;
                   const progressPct = i === 0 ? 75 : i === 1 ? 0 : 40;
-                  const tag =
-                    i % 2 === 0
-                      ? { label: "Hết hạn sớm", bg: "rgba(166, 51, 0, 0.1)", color: PRIMARY }
-                      : { label: "Học phần mới", bg: "rgba(133, 61, 151, 0.1)", color: TERTIARY };
+                  
                   return (
                     <Box
                       key={p.course_code}
@@ -484,40 +481,14 @@ export default function GradeEntry() {
                         transition: "transform 0.15s ease",
                       }}
                     >
-                      <Group justify="space-between" align="flex-start" mb={8}>
-                        <Text
-                          fz={10}
-                          fw={700}
-                          tt="uppercase"
-                          px={8}
-                          py={4}
-                          style={{
-                            letterSpacing: "0.06em",
-                            borderRadius: 9999,
-                            background: tag.bg,
-                            color: tag.color,
-                          }}
-                        >
-                          {tag.label}
-                        </Text>
-                        <Text size="sm" c={ON_VARIANT}>
-                          {p.credits} TC
-                        </Text>
-                      </Group>
+                     
                       <Text fw={700} c={ON_SURFACE}>
                         {p.course_name}
                       </Text>
                       <Text size="sm" c={ON_VARIANT} mt={4}>
                         Mã HP: {p.course_code}
                       </Text>
-                      <Group gap={8} mt={12} align="center">
-                        <Box style={{ flex: 1, height: 6, background: "#e7e8e8", borderRadius: 9999, overflow: "hidden" }}>
-                          <Box style={{ height: "100%", width: `${progressPct}%`, background: barColor, borderRadius: 9999 }} />
-                        </Box>
-                        <Text fz={10} fw={700} c={ON_VARIANT}>
-                          {progressPct}%
-                        </Text>
-                      </Group>
+                    
                     </Box>
                   );
                 })

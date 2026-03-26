@@ -71,21 +71,6 @@ function Navbar() {
                                         </Anchor>
                                     )}
                                 </NavLink>
-
-                                <NavLink to="/dashboard" style={{ textDecoration: "none" }}>
-                                    {({ isActive }) => (
-                                        <Anchor
-                                            underline="never"
-                                            style={{
-                                                color: isActive ? theme.colors.orange[7] : theme.colors.gray[7],
-                                                fontWeight: isActive ? 700 : 600,
-                                                paddingBottom: 4,
-                                            }}
-                                        >
-                                            Trang chủ
-                                        </Anchor>
-                                    )}
-                                </NavLink>
                                 <NavLink to="/gradeentry" style={{ textDecoration: "none" }}>
                                     {({ isActive }) => (
                                         <Anchor
@@ -125,7 +110,7 @@ function Navbar() {
                                                 paddingBottom: 4,
                                             }}
                                         >
-                                            Lịch trình
+                                            GPA
                                         </Anchor>
                                     )}
                                 </NavLink>
