@@ -130,7 +130,7 @@ const GradeRow = memo(function GradeRow({
     }
 
     const scoreInput = form.values.score_10;
-    if (scoreInput == null || scoreInput === "" || Number.isNaN(Number(scoreInput))) {
+    if (scoreInput == null || Number.isNaN(Number(scoreInput))) {
       notifications.show({ message: "Điểm phải là số hợp lệ từ 0 đến 10", color: "red" });
       return;
     }

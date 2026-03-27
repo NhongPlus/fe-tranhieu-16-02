@@ -2,7 +2,6 @@ import { useEffect, useMemo, useState } from "react";
 import {
   ActionIcon,
   Anchor,
-  Avatar,
   Box,
   Badge,
   Button,
@@ -18,7 +17,6 @@ import {
 } from "@mantine/core";
 import { useDisclosure, useMediaQuery } from "@mantine/hooks";
 import {
-  IconBell,
   IconCalendar,
   IconEdit,
   IconLanguage,
@@ -28,7 +26,6 @@ import {
   IconShieldCheck,
   IconTerminal,
   IconSend,
-  IconSettings,
   IconChartPie,
   IconAlertCircle,
 } from "@tabler/icons-react";
