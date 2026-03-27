@@ -46,7 +46,7 @@ import { useForm } from "@mantine/form";
 import { useMediaQuery } from "@mantine/hooks";
 import Navbar from "../components/Navbar";
 
-// ─── Design tokens (Scholarly) ───────────────────────────────────────────────
+// ─── Design tokens (StudyMind) ───────────────────────────────────────────────
 const PRIMARY = "#a63300";
 const TERTIARY = "#853d97";
 const SECONDARY = "#565d5f";
@@ -107,7 +107,7 @@ const GradeRow = memo(function GradeRow({
   onDeleted: () => void;
 }) {
   const theme = useMantineTheme();
-  const hasGrade = course.score_10 !== null;
+  const hasGrade = course.score_10 != null;
   const [isEditing, setIsEditing] = useState(false);
   const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState(false);
@@ -123,17 +123,24 @@ const GradeRow = memo(function GradeRow({
   const canInput = !hasGrade || isEditing;
 
   const handleSave = async () => {
-    const semester = form.values.semester?.trim() ?? "";
-    const score = Number(form.values.score_10);
-
-    if (isNaN(score) || score < 0 || score > 10) {
-      notifications.show({ message: "Điểm phải từ 0 đến 10", color: "red" });
-      return;
-    }
+    const semester = (form.values.semester?.trim() ?? "").replace(/\s+/g, " ");
     if (!semester) {
       notifications.show({ message: "Nhập học kỳ (vd: 2024.1)", color: "red" });
       return;
     }
+
+    const scoreInput = form.values.score_10;
+    if (scoreInput == null || scoreInput === "" || Number.isNaN(Number(scoreInput))) {
+      notifications.show({ message: "Điểm phải là số hợp lệ từ 0 đến 10", color: "red" });
+      return;
+    }
+
+    const score = Number(scoreInput);
+    if (score < 0 || score > 10) {
+      notifications.show({ message: "Điểm phải từ 0 đến 10", color: "red" });
+      return;
+    }
+
 
     setSaving(true);
     try {
@@ -392,15 +399,15 @@ export default function GradeEntry() {
   }, []);
 
   const pendingCodes = new Set(pending.map((p) => p.course_code));
-  const studied = courses.filter((c) => c.score_10 !== null);
-  const notStudied = courses.filter((c) => c.score_10 === null);
+  const studied = courses.filter((c) => c.score_10 != null);
+  const notStudied = courses.filter((c) => c.score_10 == null);
 
   const semesters = Array.from(new Set(courses.map((c) => c.semester).filter(Boolean) as string[])).sort();
 
   const displayed = courses
     .filter((c) => {
-      if (filter === "studied") return c.score_10 !== null;
-      if (filter === "not_studied") return c.score_10 === null;
+      if (filter === "studied") return c.score_10 != null;
+      if (filter === "not_studied") return c.score_10 == null;
       return true;
     })
     .filter((c) => !semesterFilter || c.semester === semesterFilter)

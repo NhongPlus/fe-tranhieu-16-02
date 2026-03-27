@@ -173,8 +173,14 @@ export default function GpaPage() {
     const semesterInput = document.getElementById(`semester-${course.course_code}`) as HTMLInputElement | null;
     const scoreInput = document.getElementById(`score-${course.course_code}`) as HTMLInputElement | null;
 
-    const semester = semesterInput?.value.trim();
-    const scoreValue = scoreInput?.value;
+    if (!semesterInput || !scoreInput) {
+      console.warn("[GPA] input not found for course", course.course_code);
+      notifications.show({ message: "Không tìm thấy ô nhập điểm. Vui lòng reload trang", color: "red" });
+      return;
+    }
+
+    const semester = semesterInput.value.trim() || course.semester || "";
+    const scoreValue = scoreInput.value || (course.score_10 != null ? String(course.score_10) : "");
 
     if (!semester || !scoreValue) {
       notifications.show({ message: "Nhập đủ điểm và học kỳ", color: "red" });
@@ -190,6 +196,8 @@ export default function GpaPage() {
     }
 
     const score = Number(scoreValue);
+    console.log("[GPA] save grade payload", { course_code: course.course_code, score_10: score, semester });
+
     if (isNaN(score) || score < 0 || score > 10) {
       notifications.show({ message: "Điểm phải từ 0 đến 10", color: "red" });
       return;
@@ -228,8 +236,8 @@ export default function GpaPage() {
   };
 
   // ── Derived ────────────────────────────────────────────────────────────────
-  const studied = courses.filter((c) => c.score_10 !== null);
-  const notStudied = courses.filter((c) => c.score_10 === null);
+  const studied = courses.filter((c) => c.score_10 != null);
+  const notStudied = courses.filter((c) => c.score_10 == null);
   const displayed =
     filter === "studied" ? studied : filter === "not_studied" ? notStudied : courses;
 
@@ -807,10 +815,10 @@ export default function GpaPage() {
           <Grid>
             <Grid.Col span={{ base: 12, md: 6 }}>
               <Text fw={700} mb={8} style={{ fontSize: 16 }}>
-                Scholarly Sanctuary
+                StudyMind Sanctuary
               </Text>
               <Text size="sm" c="dimmed" style={{ lineHeight: 1.65 }}>
-                © 2024 Scholarly Sanctuary. Preserving the focus of the modern student.
+                © 2024 StudyMind Sanctuary. Preserving the focus of the modern student.
               </Text>
             </Grid.Col>
             <Grid.Col span={{ base: 12, md: 6 }}>

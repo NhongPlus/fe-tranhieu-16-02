@@ -322,76 +322,59 @@ export default function Dashboard() {
     });
   }, [eventsWeek, primary, primaryContainer, secondary, tertiary]);
 
-  const weeklyDays = useMemo(
-    () => [
-      {
-        key: "mon",
-        label: "Thứ 2",
-        date: "11",
-        accent: "dimmed",
-        sessions: [
-          { period: "Sáng", title: "Toán cao cấp", sub: "Tiết 1-3", icon: "primary" },
-          { period: "Chiều", title: "Thể dục", sub: "Tiết 7-9", icon: "primary" },
-          { period: "Tối", title: "Trống", sub: "", icon: "muted", italic: true },
-        ],
-      },
-      {
-        key: "tue",
-        label: "Thứ 3",
-        date: "12",
-        active: true,
-        sessions: [
-          {
-            period: "Sáng",
-            title: "Mạng máy tính",
-            sub: "Tiết 1-4",
-            icon: "activeBox",
-          },
-          { period: "Chiều", title: "Lập trình Web", sub: "Tiết 7-9" },
-          { period: "Tối", title: "CLB Tin học", sub: "" },
-        ],
-      },
-      {
-        key: "wed",
-        label: "Thứ 4",
-        date: "13",
-        sessions: [
-          { period: "Sáng", title: "Triết học", sub: "Tiết 2-5" },
-          { period: "Chiều", title: "Trống", sub: "", italic: true },
-          { period: "Tối", title: "Seminar AI", sub: "" },
-        ],
-      },
-      {
-        key: "thu",
-        label: "Thứ 5",
-        date: "14",
-        sessionsEmpty: "Không có lịch học cố định",
-      },
-      {
-        key: "fri",
-        label: "Thứ 6",
-        date: "15",
-        sessions: [
-          { period: "Sáng", title: "Quản trị dự án", sub: "Tiết 1-3" },
-          { period: "Chiều", title: "Tiếng Anh CN", sub: "Tiết 8-10" },
-          { period: "Tối", title: "Trống", sub: "", italic: true },
-        ],
-      },
-      {
-        key: "sat",
-        label: "Thứ 7",
-        date: "16",
-        weekend: true,
-      },
-      {
-        key: "sun",
-        label: "CN",
-        date: "17",
-        weekend: true,
-      },
-    ],
-    []
-  );
+  const normalizeSession = (session: string | null | undefined) => {
+    const s = String(session ?? "").trim().toLowerCase();
+    if (s === "morning" || s === "sáng" || s === "sang") return "Sáng";
+    if (s === "afternoon" || s === "chiều" || s === "chieu") return "Chiều";
+    if (s === "evening" || s === "tối" || s === "toi") return "Tối";
+    return String(session ?? "").trim() || "TBD";
+  };
+
+  const weeklyDays = useMemo(() => {
+    if (!eventsWeek?.length) {
+      return [];
+    }
+
+    const byDay = new Map<string, any>();
+
+    eventsWeek.forEach((ev) => {
+      const label = eventDayLabel(ev.day_of_week);
+      const date = eventDateChip(ev.start_date);
+      const key = label.toLowerCase().replace(/\s+/g, "-");
+      const period = normalizeSession(ev.session);
+      const title = ev.title || "Không tên";
+      const sub = `Tiết ${ev.period_start ?? "?"}–${ev.period_end ?? "?"}`;
+
+      if (!byDay.has(key)) {
+        byDay.set(key, {
+          key,
+          label,
+          date,
+          sessions: [],
+        });
+      }
+
+      const day = byDay.get(key);
+      day.sessions.push({ period, title, sub });
+
+      // Keep first date for day
+      if (!day.date || day.date === "—") {
+        day.date = date;
+      }
+    });
+
+    const sortedDays = Array.from(byDay.values()).sort((a, b) => {
+      const order = ["Thứ 2", "Thứ 3", "Thứ 4", "Thứ 5", "Thứ 6", "Thứ 7", "CN"];
+      const ia = order.indexOf(a.label);
+      const ib = order.indexOf(b.label);
+      if (ia >= 0 && ib >= 0) return ia - ib;
+      if (ia >= 0) return -1;
+      if (ib >= 0) return 1;
+      return a.label.localeCompare(b.label, undefined, { numeric: true });
+    });
+
+    return sortedDays;
+  }, [eventsWeek]);
 
   const percentDone = clampNumber(
     gpaSummary != null && Number.isFinite(Number(gpaSummary.progress_percent))
@@ -1023,10 +1006,10 @@ export default function Dashboard() {
           <Group justify="space-between" align="center" style={{ gap: 24, flexWrap: "wrap" }}>
             <Stack gap={4}>
               <Text fw={900} style={{ fontSize: 18 }}>
-                Scholarly
+                StudyMind
               </Text>
               <Text size="sm" style={{ color: theme.colors.gray[7] }}>
-                © 2024 Scholarly. Nền tảng học tập thông minh.
+                © 2024 StudyMind. Nền tảng học tập thông minh.
               </Text>
             </Stack>
             <Group gap={20} style={{ flexWrap: "wrap" }}>

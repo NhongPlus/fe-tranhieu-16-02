@@ -1,9 +1,9 @@
-import { ActionIcon, Anchor, Avatar, Button, Container, Group, Text, useMantineTheme } from "@mantine/core"
+import { ActionIcon, Anchor, Avatar, Button, Container, Group, Menu, Text, useMantineTheme } from "@mantine/core"
 import { NavLink } from "react-router-dom";
 
 import { Box } from "@mantine/core";
 import { useMediaQuery } from "@mantine/hooks";
-import { IconBell, IconSettings } from "@tabler/icons-react";
+import { IconBell, IconSettings, IconLogout } from "@tabler/icons-react";
 import { useNavigate } from "react-router-dom";
 
 function Navbar() {
@@ -12,6 +12,13 @@ function Navbar() {
     const isMdUp = useMediaQuery("(min-width: 48em)");
     const primaryContainer = theme.colors.orange?.[1] ?? "#ffefe8";
     const primary = theme.colors.orange?.[6] ?? "#a63300";
+
+    const handleLogout = () => {
+        localStorage.removeItem("token");
+        localStorage.removeItem("user");
+        navigate("/login");
+    };
+
     return (
         <Box
             style={{
@@ -37,7 +44,7 @@ function Navbar() {
                                 color: theme.colors.orange[7],
                             }}
                         >
-                            Scholarly
+                            StudyMind
                         </Text>
 
                         {isMdUp && (
@@ -154,13 +161,22 @@ function Navbar() {
                             Nâng cấp
                         </Button>
 
-                        <Avatar
-                            radius="xl"
-                            size={40}
-                            src="https://lh3.googleusercontent.com/aida-public/AB6AXuApCz_Qu9f8mgIfzAkPbHRJXoV_Es_3PUsb45MVR4SFtsqB7fJtOKHZM0HHe75CCS8ElPckatJtDw3zZh1EH-4WMaGFFWcm2OzyyWMC-pIERAVS_Se_BVm6ZzUhrBViLApwSsbvvGXwrt2d-j0UMutL4Mal6PrVSaoCCnM4auPtbPt1Ok-t5AXCT8sl_k87DIlmlGAtv3bkQ6G015LPylwJlbi7luTHvWDel3oDghpHHHA9ftlUnXRuGVXJcVIdFyaqBomy6blnNxo"
-                            alt="Ảnh đại diện sinh viên"
-                            styles={{ root: { border: `2px solid ${primaryContainer}` } }}
-                        />
+                        <Menu withinPortal position="bottom-end" shadow="md">
+                            <Menu.Target>
+                                <Avatar
+                                    radius="xl"
+                                    size={40}
+                                    src="https://lh3.googleusercontent.com/aida-public/AB6AXuApCz_Qu9f8mgIfzAkPbHRJXoV_Es_3PUsb45MVR4SFtsqB7fJtOKHZM0HHe75CCS8ElPckatJtDw3zZh1EH-4WMaGFFWcm2OzyyWMC-pIERAVS_Se_BVm6ZzUhrBViLApwSsbvvGXwrt2d-j0UMutL4Mal6PrVSaoCCnM4auPtbPt1Ok-t5AXCT8sl_k87DIlmlGAtv3bkQ6G015LPylwJlbi7luTHvWDel3oDghpHHHA9ftlUnXRuGVXJcVIdFyaqBomy6blnNxo"
+                                    alt="Ảnh đại diện sinh viên"
+                                    styles={{ root: { border: `2px solid ${primaryContainer}` } }}
+                                />
+                            </Menu.Target>
+                            <Menu.Dropdown>
+                                <Menu.Item icon={<IconLogout size={16} />} color="red" onClick={handleLogout}>
+                                    Đăng xuất
+                                </Menu.Item>
+                            </Menu.Dropdown>
+                        </Menu>
                     </Group>
                 </Group>
             </Container>
