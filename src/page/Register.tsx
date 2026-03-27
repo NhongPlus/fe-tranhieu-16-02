@@ -98,7 +98,7 @@ export default function Register() {
             Nâng tầm <Text style={styles.heroTitle} c={'#9D330A'}>Trí tuệ của bạn.</Text>
           </Title>
           <Text size="sm" color="dimmed" style={{ maxWidth: 460 }}>
-            Đại nam university trường đại học đại nam Lorem ipsum dolor sit amet consectetur adipisicing elit. Tenetur error beatae ipsa corporis quo, eius repudiandae cumque magni illum sequi in tempore similique delectus impedit culpa dolores maxime? Ab, eaque?
+            Theo dõi lịch học tập và gpa của bạn , sản phẩm phát triển bởi Nguyễn Ngọc Bảo Long và Trần Minh Hiếu
           </Text>
           <Group mt="md" align="center" justify="center" gap="xs">
             <Center style={{ width: 36, height: 36, borderRadius: 10, backgroundColor: "#FFECE4" }}>

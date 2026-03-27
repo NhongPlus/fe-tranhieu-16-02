@@ -109,7 +109,7 @@ export default function Login() {
   return (
     <Box style={styles.root}>
       <Box style={styles.left}>
-        <Box mb="xl" pl={150} style={{ display: 'flex', flexDirection:'column', justifyContent: 'center', alignItems: 'flex-start', textAlign: 'left' }}>
+        <Box mb="xl" pl={150} style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'flex-start', textAlign: 'left' }}>
           <Group gap="xs" mb="xs" >
             <ThemeIcon color="orange" radius="md" size="lg">
               S
@@ -118,14 +118,14 @@ export default function Login() {
               STUDYMIND
             </Text>
           </Group>
-          <Text size="xs" c="orange" fw={700}  tt="uppercase" >
+          <Text size="xs" c="orange" fw={700} tt="uppercase" >
             Next-Gen Academic AI
           </Text>
           <Title style={styles.heroTitle} order={1}>
             Nâng tầm <Text style={styles.heroTitle} c={'#9D330A'}>Trí tuệ của bạn.</Text>
           </Title>
           <Group color="dimmed" mb="lg" style={{ maxWidth: 460 }}>
-            Đại nam university trường đại học đại nam Lorem ipsum dolor sit amet consectetur adipisicing elit. Tenetur error beatae ipsa corporis quo, eius repudiandae cumque magni illum sequi in tempore similique delectus impedit culpa dolores maxime? Ab, eaque?
+            Theo dõi lịch học tập và gpa của bạn , sản phẩm phát triển bởi Nguyễn Ngọc Bảo Long và Trần Minh Hiếu
             <Center style={{ width: 36, height: 36, borderRadius: 10, backgroundColor: "#FFECE4" }}>
               <Text size="xs" color="#FF5722" fw={700}>AI</Text>
             </Center>

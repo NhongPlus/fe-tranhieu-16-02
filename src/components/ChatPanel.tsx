@@ -26,6 +26,7 @@ export default function ChatPanel() {
   const [messages, setMessages] = useState<any[]>([]);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
+  const [answerHistory, setAnswerHistory] = useState<string[]>([]); // Lưu history answer
   const viewport = useRef<HTMLDivElement>(null);
   const normalizeGrades = (raw: any): any[] => {
     if (!raw) return [];
@@ -61,8 +62,14 @@ export default function ChatPanel() {
     setInput("");
     setLoading(true);
 
+    // Gộp history nếu có, chỉ khi gửi answer
+    let mergedMessage = userMessage;
+    if (answerHistory.length > 0) {
+      mergedMessage = answerHistory.join("\n") + "\n" + userMessage;
+    }
+
     try {
-      const res = await API.post("/chat/", { message: userMessage });
+      const res = await API.post("/chat/", { message: mergedMessage });
       const botContent = res.data.reply || res.data.response || "Không có phản hồi";
 
       if (res.data.action === "add_grade" && res.data.data) {
@@ -76,7 +83,12 @@ export default function ChatPanel() {
             pending_id: res.data.data.pending_id || null,
           },
         ]);
+        setAnswerHistory([]); // Reset history khi add_grade
       } else {
+        // Nếu là answer thì lưu vào history
+        if (res.data.action === "answer") {
+          setAnswerHistory((prev) => [...prev, userMessage]);
+        }
         const dataForTable = normalizeGrades(res.data.action === "get_grades" ? res.data.data : res.data);
 
         if (dataForTable.length > 0) {

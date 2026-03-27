@@ -136,6 +136,7 @@ const GradeRow = memo(function GradeRow({
     }
 
     const score = Number(scoreInput);
+    console.log("Giá trị score gửi lên:", score);
     if (score < 0 || score > 10) {
       notifications.show({ message: "Điểm phải từ 0 đến 10", color: "red" });
       return;
@@ -288,7 +289,6 @@ const GradeRow = memo(function GradeRow({
             min={0}
             max={10}
             step={0.1}
-            decimalScale={1}
             styles={{
               input: {
                 background: SURFACE_HIGHEST,
