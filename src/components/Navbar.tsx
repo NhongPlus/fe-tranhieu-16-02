@@ -172,7 +172,7 @@ function Navbar() {
                                 />
                             </Menu.Target>
                             <Menu.Dropdown>
-                                <Menu.Item icon={<IconLogout size={16} />} color="red" onClick={handleLogout}>
+                                <Menu.Item leftSection={<IconLogout size={16} />} color="red" onClick={handleLogout}>
                                     Đăng xuất
                                 </Menu.Item>
                             </Menu.Dropdown>
