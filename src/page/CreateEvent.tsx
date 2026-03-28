@@ -110,13 +110,28 @@ export default function CreateEvent() {
 
         setLoading(true);
         try {
+            const toDateString = (d: any) => {
+                if (!d) return null;
+                let dateObj = d;
+                if (typeof dateObj === 'string') dateObj = new Date(dateObj);
+                if (dateObj instanceof Date && !isNaN(dateObj.getTime())) {
+                    // yyyy-mm-dd
+                    const yyyy = dateObj.getFullYear();
+                    const mm = String(dateObj.getMonth() + 1).padStart(2, '0');
+                    const dd = String(dateObj.getDate()).padStart(2, '0');
+                    return `${yyyy}-${mm}-${dd}`;
+                }
+                return null;
+            };
             const formattedEvents = rows.map(row => ({
                 ...row,
-                start_date: row.start_date?.toISOString(),
-                end_date: row.end_date?.toISOString(),
+                start_date: toDateString(row.start_date),
+                end_date: toDateString(row.end_date),
             }));
 
-            await API.post("/events", { events: formattedEvents });
+            console.log("[DEBUG] Sending events:", formattedEvents);
+            const response = await API.post("/events", { events: formattedEvents });
+            console.log("[DEBUG] API response:", response);
 
             notifications.show({
                 title: "Thành công",
@@ -127,6 +142,7 @@ export default function CreateEvent() {
 
             navigate("/dashboard");
         } catch (err: any) {
+            console.error("[DEBUG] API error:", err);
             notifications.show({
                 title: "Lỗi hệ thống",
                 message: err.response?.data?.message || "Không thể kết nối đến server",

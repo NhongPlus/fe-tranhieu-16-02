@@ -631,7 +631,7 @@ export default function Dashboard() {
               <Stack gap={18}>
                 <Group justify="space-between" align="flex-end">
                   <Title order={2} fw={900}>
-                    Lịch sắp tới
+                    Lịch tuần này
                   </Title>
                   <Button variant="subtle" color="orange" size="xs">
                     Xem tất cả
@@ -826,7 +826,7 @@ export default function Dashboard() {
           {/* Weekly Schedule Section */}
           <Stack gap={16} mt={4}>
             <Title order={2} fw={900}>
-              Lịch tuần này
+              Lịch sắp tới
             </Title>
 
             <SimpleGrid cols={{ base: 1, md: 7 }} spacing="sm">
