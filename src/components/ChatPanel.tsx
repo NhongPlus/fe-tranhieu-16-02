@@ -15,6 +15,7 @@ import {
   Select,
   Button,
   useMantineTheme,
+  TextInput,
 } from "@mantine/core";
 import { IconArrowUp, IconRobot, IconPlus } from "@tabler/icons-react"; // Dùng icon mũi tên đi lên giống ChatGPT
 import API from "../api/axios";
@@ -166,12 +167,7 @@ export default function ChatPanel() {
 
     const semester = gradeConfirmSemester[msgIndex] || msg.data.semester;
     if (!semester) {
-      setMessages((prev) => [...prev, { role: "bot", content: "Vui lòng chọn học kỳ trước khi xác nhận." }]);
-      return;
-    }
-
-    if (!ALLOWED_SEMESTERS.includes(semester)) {
-      setMessages((prev) => [...prev, { role: "bot", content: `Học kỳ phải thuộc ${ALLOWED_SEMESTERS.join(", ")}` }]);
+      setMessages((prev) => [...prev, { role: "bot", content: "Vui lòng nhập học kỳ trước khi xác nhận." }]);
       return;
     }
 
@@ -443,16 +439,13 @@ export default function ChatPanel() {
                                 shadow="xs"
                                 style={{ gridColumn: "1 / -1", background: theme.white }}
                               >
-                                <Select
+                                <TextInput
                                   size="sm"
                                   label="Học kỳ"
-                                  data={ALLOWED_SEMESTERS.map((s) => ({ value: s, label: s }))}
+                                  placeholder="Nhập học kỳ (VD: 2026.3)"
                                   value={gradeConfirmSemester[index] || msg.data.semester || ""}
-                                  placeholder="Chọn học kỳ"
-                                  onChange={(value) => {
-                                    if (value) {
-                                      setGradeConfirmSemester((prev) => ({ ...prev, [index]: value }));
-                                    }
+                                  onChange={(e) => {
+                                    setGradeConfirmSemester((prev) => ({ ...prev, [index]: e.currentTarget.value }));
                                   }}
                                 />
                               </Paper>
